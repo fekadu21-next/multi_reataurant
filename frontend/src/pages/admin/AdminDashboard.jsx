@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FiHome,
   FiUsers,
@@ -8,29 +8,57 @@ import {
   FiInstagram,
   FiFileText,
 } from "react-icons/fi";
-
+import OrdersPage from "./Orders";
 import UsersPage from "./Users";
 import RestaurantsPage from "./Restaurant";
-import Category from "./Category"; // ✅ Categories
-import OrdersPage from "./Orders"; // ✅ New Orders page
+import Category from "./Category";
+import axios from "axios";
 
 export default function AdminDashboard() {
   const [activePage, setActivePage] = useState(() => {
-    // ✅ Get the page from localStorage, fallback to "dashboard"
     return localStorage.getItem("activePage") || "dashboard";
   });
+  const [unseenCount, setUnseenCount] = useState(0);
 
-  // Whenever activePage changes, save it to localStorage
+  // Fetch unseen notifications on load
+  useEffect(() => {
+    fetchUnseenCount();
+  }, []);
+
+  const fetchUnseenCount = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/orders/admin/unseen-count",
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+      setUnseenCount(res.data.unseenCount);
+    } catch (err) {
+      console.error("Error fetching unseen count:", err);
+    }
+  };
+
   const handlePageChange = (page) => {
     setActivePage(page);
     localStorage.setItem("activePage", page);
+
+    if (page === "orders") {
+      // Mark notifications as seen when opening Orders page
+      axios.post(
+        "http://localhost:5000/api/orders/admin/mark-seen",
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+      setUnseenCount(0);
+    }
   };
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:5000/api/auth/logout", {
-        method: "POST",
-      });
+      await fetch("http://localhost:5000/api/auth/logout", { method: "POST" });
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       window.location.href = "/";
@@ -41,14 +69,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* ---------------- Sidebar ---------------- */}
       <aside className="w-64 bg-[#1F1F25] text-gray-300 flex flex-col">
         <div className="p-6 flex items-center justify-between">
           <div className="text-xl font-bold text-white">Addis Eats</div>
-          <div className="flex gap-3 text-white text-lg">
-            <FiShoppingBag className="cursor-pointer hover:text-gray-300" />
-            <FiInstagram className="cursor-pointer hover:text-gray-300" />
-          </div>
         </div>
 
         <nav className="flex-1 space-y-2 px-4">
@@ -78,14 +101,13 @@ export default function AdminDashboard() {
           />
           <SidebarItem
             icon={<FiFileText />}
-            label="Orders"
+            label={`Orders ${unseenCount > 0 ? `(${unseenCount})` : ""}`}
             active={activePage === "orders"}
             onClick={() => handlePageChange("orders")}
           />
         </nav>
       </aside>
 
-      {/* ---------------- Main Content ---------------- */}
       <main className="flex-1 p-6 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">
@@ -104,18 +126,17 @@ export default function AdminDashboard() {
             Logout
           </button>
         </div>
-        {/* ---------------- Pages ---------------- */}
+
         {activePage === "dashboard" && <DashboardPage />}
         {activePage === "users" && <UsersPage />}
         {activePage === "restaurants" && <RestaurantsPage />}
         {activePage === "categories" && <Category />}
-        {activePage === "orders" && <OrdersPage />} {/* ✅ Orders */}
+        {activePage === "orders" && <OrdersPage />}
       </main>
     </div>
   );
 }
 
-/* ---------------- Sidebar Item ---------------- */
 function SidebarItem({ icon, label, active, onClick }) {
   return (
     <div

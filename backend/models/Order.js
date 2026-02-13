@@ -95,8 +95,12 @@ const orderSchema = new mongoose.Schema(
       enum: ["PENDING", "PAID", "FAILED"],
       default: "PENDING", // ✅ IMPORTANT FIX
     },
-
+    isSeen: {
+      type: Boolean,
+      default: false, // new orders are unseen by default
+    },
     /* ================= ORDER STATUS ================= */
+    adminSeen: { type: Boolean, default: false },
 
     orderStatus: {
       type: String,

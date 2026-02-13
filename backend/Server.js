@@ -14,6 +14,8 @@ import chapaRoutes from "./routes/chapaRoutes.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 dotenv.config();
 
@@ -30,7 +32,6 @@ app.use(
     credentials: true,
   }),
 );
-
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -51,9 +52,52 @@ app.get("/", (req, res) => {
   res.send("🚀 API is running...");
 });
 
-/* ================= START ================= */
+/* ================= SERVER + SOCKET.IO ================= */
 const PORT = process.env.PORT || 5000;
+const httpServer = createServer(app);
 
-app.listen(PORT, () => {
+export const io = new Server(httpServer, {
+  cors: { origin: "http://localhost:5173", credentials: true },
+});
+
+/* ================= ONLINE USERS TRACKING ================= */
+// Owners online
+export const onlineOwners = new Map();
+// Admins online
+export const onlineAdmins = new Map();
+
+io.on("connection", (socket) => {
+  console.log("⚡ Socket connected:", socket.id);
+
+  // -------------------- OWNER --------------------
+  socket.on("registerOwner", (ownerId) => {
+    onlineOwners.set(ownerId, socket.id);
+    console.log("Owner online:", ownerId);
+  });
+
+  // -------------------- ADMIN --------------------
+  socket.on("registerAdmin", (adminId) => {
+    onlineAdmins.set(adminId, socket.id);
+    console.log("Admin online:", adminId);
+  });
+
+  // -------------------- DISCONNECT --------------------
+  socket.on("disconnect", () => {
+    // Remove from owners
+    onlineOwners.forEach((value, key) => {
+      if (value === socket.id) onlineOwners.delete(key);
+    });
+
+    // Remove from admins
+    onlineAdmins.forEach((value, key) => {
+      if (value === socket.id) onlineAdmins.delete(key);
+    });
+
+    console.log("Socket disconnected:", socket.id);
+  });
+});
+
+/* ================= START SERVER ================= */
+httpServer.listen(PORT, () => {
   console.log(`🔥 Server running on http://localhost:${PORT}`);
 });

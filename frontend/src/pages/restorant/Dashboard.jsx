@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FiHome,
   FiShoppingBag,
@@ -11,15 +11,42 @@ import {
 } from "react-icons/fi";
 import Menu from "./Menu";
 import Orders from "./Orders";
+import axios from "axios";
+
+const API_URL = "http://localhost:5000";
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState("dashboard");
+  const [unseenCount, setUnseenCount] = useState(0);
+
+  const token = localStorage.getItem("token");
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const restaurantId = storedUser?.restaurant?.restaurantId;
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     window.location.href = "/";
   };
+
+  // Fetch unseen orders count for badge
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const fetchUnseen = async () => {
+      try {
+        const res = await axios.get(
+          `${API_URL}/api/orders/restaurant/${restaurantId}/unseen-count`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        setUnseenCount(res.data.unseenCount);
+      } catch (err) {
+        console.error("Fetch unseen orders failed:", err);
+      }
+    };
+
+    fetchUnseen();
+  }, [restaurantId]);
 
   return (
     <div className="flex w-full min-h-screen bg-gray-100">
@@ -45,6 +72,7 @@ export default function Dashboard() {
             label="Orders"
             active={activePage === "orders"}
             onClick={() => setActivePage("orders")}
+            badge={unseenCount}
           />
 
           <SidebarItem icon={<FiUsers />} label="Customers" />
@@ -72,13 +100,13 @@ export default function Dashboard() {
         </div>
         {activePage === "dashboard" && <DashboardContent />}
         {activePage === "menu" && <Menu />}
-        {activePage === "orders" && <Orders />} {/* ✅ */}
+        {activePage === "orders" && <Orders onSeen={() => setUnseenCount(0)} />}
       </main>
     </div>
   );
 }
-/* ---------------- DASHBOARD CONTENT ---------------- */
 
+/* ---------------- DASHBOARD CONTENT ---------------- */
 function DashboardContent() {
   return (
     <>
@@ -104,15 +132,21 @@ function DashboardContent() {
 }
 
 /* ---------------- COMPONENTS ---------------- */
-
-function SidebarItem({ icon, label, active, onClick }) {
+function SidebarItem({ icon, label, active, onClick, badge }) {
   return (
     <div
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-2 rounded cursor-pointer 
       ${active ? "bg-gray-700 text-white" : "hover:bg-gray-700"}`}
     >
-      <span className="text-lg">{icon}</span>
+      <span className="text-lg relative">
+        {icon}
+        {badge > 0 && (
+          <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            {badge}
+          </span>
+        )}
+      </span>
       <span>{label}</span>
     </div>
   );

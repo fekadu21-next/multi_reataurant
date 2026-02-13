@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { io } from "socket.io-client";
 
 const API_URL = "http://localhost:5000/api/orders";
+const SOCKET_URL = "http://localhost:5000";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -10,18 +12,33 @@ export default function OrdersPage() {
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [unseenCount, setUnseenCount] = useState(0);
+
+  // ---------------- Socket.IO ----------------
+  useEffect(() => {
+    const socket = io(SOCKET_URL, { withCredentials: true });
+
+    // Register admin on socket
+    const adminId = localStorage.getItem("adminId"); // set on login
+    if (adminId) socket.emit("registerAdmin", adminId);
+
+    // Listen for new order notifications
+    socket.on("adminNewOrder", () => {
+      setUnseenCount((prev) => prev + 1);
+      fetchOrders(); // Refresh orders list
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   // ---------------- Fetch Orders ----------------
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const res = await axios.get(API_URL, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
 
-      // ✅ Keep only PAID & CONFIRMED orders
       const validOrders = res.data.filter(
         (order) =>
           order.paymentStatus === "PAID" && order.orderStatus === "CONFIRMED",
@@ -29,10 +46,32 @@ export default function OrdersPage() {
 
       setOrders(validOrders);
       setLoading(false);
+
+      // Update unseen count from backend
+      const countRes = await axios.get(`${API_URL}/admin/unseen-count`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setUnseenCount(countRes.data.unseenCount);
     } catch (err) {
       console.error(err);
       setError("Failed to fetch orders");
       setLoading(false);
+    }
+  };
+
+  // ---------------- Mark Admin Notifications as Seen ----------------
+  const markNotificationsSeen = async () => {
+    try {
+      await axios.post(
+        `${API_URL}/admin/mark-seen`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+      setUnseenCount(0);
+    } catch (err) {
+      console.error("Error marking notifications seen:", err);
     }
   };
 
@@ -79,19 +118,27 @@ export default function OrdersPage() {
     return { weeklyTotal: weekly, totalCommission: commission };
   }, [filteredOrders]);
 
-  // ---------------- Format Date ----------------
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString(undefined, {
+  const formatDate = (dateStr) =>
+    new Date(dateStr).toLocaleDateString(undefined, {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
-  };
 
-  // ---------------- UI ----------------
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Orders (PAID & CONFIRMED)</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold">Orders (PAID & CONFIRMED)</h1>
+
+        {unseenCount > 0 && (
+          <button
+            onClick={markNotificationsSeen}
+            className="px-4 py-2 bg-red-500 text-white rounded"
+          >
+            {unseenCount} New Orders
+          </button>
+        )}
+      </div>
 
       {error && <p className="text-red-500">{error}</p>}
 
@@ -141,7 +188,6 @@ export default function OrdersPage() {
               <th className="border p-2">Created At</th>
             </tr>
           </thead>
-
           <tbody>
             {loading ? (
               <tr>

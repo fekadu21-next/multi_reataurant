@@ -1,23 +1,49 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { io } from "socket.io-client";
+
 const API_URL = "http://localhost:5000";
 
-export default function Orders() {
+export default function Orders({ onSeen }) {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [recentFilter, setRecentFilter] = useState("NEWEST");
-  // const [newOrders, setNewOrders] = useState([]);
+  const [unseenCount, setUnseenCount] = useState(0);
 
   const token = localStorage.getItem("token");
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const restaurantId = storedUser?.restaurant?.restaurantId;
-
-  /* ================= FETCH ORDERS ================= */
-
-  const fetchOrders = async () => {
+  /* ================= SOCKET ================= */
+  useEffect(() => {
     if (!restaurantId) return;
 
+    const init = async () => {
+      await fetchOrders();
+      const timer = setTimeout(async () => {
+        await markOrdersSeen();
+
+        if (onSeen) onSeen();
+      }, 3000);
+      return () => clearTimeout(timer);
+    };
+
+    init();
+
+    const socket = io(API_URL, { auth: { token } });
+
+    socket.on("newOrder", (data) => {
+      if (data.restaurantId === restaurantId) {
+        fetchOrders();
+      }
+    });
+
+    return () => socket.disconnect();
+  }, [restaurantId]);
+
+  /* ================= FETCH ORDERS ================= */
+  const fetchOrders = async () => {
+    if (!restaurantId) return;
     try {
       const res = await axios.get(
         `${API_URL}/api/orders/restaurant/${restaurantId}`,
@@ -30,20 +56,39 @@ export default function Orders() {
 
       setOrders(sorted);
       setFilteredOrders(sorted);
+
+      // Fetch unseen count from DB
+      const unseenRes = await axios.get(
+        `${API_URL}/api/orders/restaurant/${restaurantId}/unseen-count`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setUnseenCount(unseenRes.data.unseenCount);
     } catch (err) {
       console.error("Fetch orders failed:", err);
     }
   };
 
-  /* ================= SOCKET ================= */
-
-  useEffect(() => {
+  /* ================= MARK ORDERS SEEN ================= */
+  const markOrdersSeen = async () => {
     if (!restaurantId) return;
-    fetchOrders();
-  }, [restaurantId]);
+    try {
+      await axios.put(
+        `${API_URL}/api/orders/restaurant/${restaurantId}/seen`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      // reset badge
+      setUnseenCount(0);
+
+      // refetch orders to update table
+      fetchOrders();
+    } catch (err) {
+      console.error("Mark orders seen failed:", err);
+    }
+  };
 
   /* ================= FILTER ================= */
-
   const applyFilters = (payment, recent) => {
     let result = [...orders];
 
@@ -71,7 +116,6 @@ export default function Orders() {
   };
 
   /* ================= UPDATE ================= */
-
   const updateOrder = async (id, updates) => {
     try {
       await axios.put(`${API_URL}/api/orders/${id}/status`, updates, {
@@ -89,7 +133,6 @@ export default function Orders() {
   };
 
   /* ================= DELETE ================= */
-
   const deleteOrder = async (id) => {
     if (!window.confirm("Delete order?")) return;
 
@@ -106,7 +149,6 @@ export default function Orders() {
   };
 
   /* ================= UTIL ================= */
-
   const totalRevenue = filteredOrders.reduce(
     (acc, o) => acc + (o.totalPrice || 0),
     0,
@@ -120,14 +162,23 @@ export default function Orders() {
     });
 
   /* ================= RENDER ================= */
-
   return (
     <div className="p-3 overflow-x-auto">
       <h2 className="text-2xl font-bold mb-2 text-center">Restaurant Orders</h2>
 
-      <div className="text-center mb-4 font-semibold text-lg">
-        Revenue:{" "}
-        <span className="text-green-600">{totalRevenue.toFixed(2)} ETB</span>
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-center font-semibold text-lg">
+          Revenue:{" "}
+          <span className="text-green-600">{totalRevenue.toFixed(2)} ETB</span>
+        </div>
+        {unseenCount > 0 && (
+          <div
+            className="bg-blue-600 text-white px-3 py-1 rounded-full cursor-pointer"
+            onClick={markOrdersSeen}
+          >
+            New Orders: {unseenCount}
+          </div>
+        )}
       </div>
 
       {/* FILTERS */}
@@ -153,6 +204,7 @@ export default function Orders() {
         </select>
       </div>
 
+      {/* ORDERS TABLE */}
       <table className="w-full border">
         <thead>
           <tr className="bg-gray-100">
@@ -181,13 +233,15 @@ export default function Orders() {
             const name = o.customerName
               ? `${o.customerName.firstName} ${o.customerName.lastName}`
               : "Guest";
-
             const items = o.items
               .map((i) => `${i.name}×${i.quantity}`)
               .join(", ");
 
             return (
-              <tr key={o._id}>
+              <tr
+                key={o._id}
+                className={o.isSeen === false ? "bg-blue-100" : ""}
+              >
                 <td className="border p-2">{name}</td>
                 <td className="border p-2">{o.customerEmail}</td>
                 <td className="border p-2">{o.customerPhone}</td>
@@ -204,9 +258,7 @@ export default function Orders() {
                   <select
                     value={o.paymentStatus}
                     onChange={(e) =>
-                      updateOrder(o._id, {
-                        paymentStatus: e.target.value,
-                      })
+                      updateOrder(o._id, { paymentStatus: e.target.value })
                     }
                   >
                     <option>PENDING</option>
@@ -219,9 +271,7 @@ export default function Orders() {
                   <select
                     value={o.orderStatus}
                     onChange={(e) =>
-                      updateOrder(o._id, {
-                        orderStatus: e.target.value,
-                      })
+                      updateOrder(o._id, { orderStatus: e.target.value })
                     }
                   >
                     <option>PENDING</option>
