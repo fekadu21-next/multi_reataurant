@@ -38,7 +38,7 @@ export default function Login() {
         } else if (data.user.role === "restaurant_owner") {
           window.location.href = "/restaurant-dashboard";
         } else {
-          window.location.href = "/customer-dashboard";
+          window.location.href = "/";
         }
       }
     } catch (err) {

@@ -7,6 +7,8 @@ const API_URL = "http://localhost:5000/api";
 
 export default function OrdersPage() {
   const { id } = useParams();
+  const token = localStorage.getItem("token");
+  const isLoggedIn = !!token;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -68,8 +70,13 @@ export default function OrdersPage() {
 
       <p className="text-[15px] mb-8">
         Thank you. Your order has been received.
+        {!isLoggedIn && (
+          <>
+            {" "}
+            Please create account to track your order & get 10% discount next time.
+          </>
+        )}
       </p>
-
       {/* SUMMARY LIST */}
       <ul className="space-y-3 mb-12 text-[15px]">
         <li className="flex items-center gap-2">

@@ -1,7 +1,8 @@
 import Order from "../models/Order.js";
 import Restaurant from "../models/Restaurant.js"; // Adjust path if needed
-
+import User from "../models/User.js";
 import { onlineOwners, onlineAdmins } from "../Server.js";
+import { createReviewNotification } from "./notificationController.js";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
 const otpStore = new Map();
 
@@ -58,6 +59,7 @@ export const verifyOtp = (req, res) => {
 // 🛒 Create order (only after OTP verification)
 export const createOrder = async (req, res) => {
   try {
+    console.log("REQ.USER:", req.user);
     const {
       restaurantId,
       items,
@@ -69,58 +71,100 @@ export const createOrder = async (req, res) => {
       customerName,
     } = req.body;
 
-    // ------------------ Required fields check ------------------
-    if (!email || !customerName?.firstName || !customerName?.lastName) {
-      return res.status(400).json({
-        message: "Email, first name, and last name are required",
-      });
-    }
-
     if (!items || items.length === 0) {
       return res.status(400).json({
         message: "Order items are required",
       });
     }
 
-    // ------------------ OTP validation ------------------
-    const otpRecord = otpStore.get(email);
+    let customerId = null;
+    let finalEmail;
+    let finalCustomerName;
+    let customerPhone = "Not Provided";
 
-    if (!otpRecord) return res.status(400).json({ message: "OTP not found" });
-    if (!otpRecord.verified)
-      return res.status(400).json({ message: "OTP not verified" });
-    if (Date.now() > otpRecord.expiresAt) {
-      otpStore.delete(email);
-      return res.status(400).json({ message: "OTP expired" });
+    // =====================================================
+    // 🔐 IF USER IS LOGGED IN
+    // =====================================================
+    if (req.user) {
+      const user = await User.findById(req.user.id);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      customerId = user._id;
+      finalEmail = user.email;
+
+      // Split fullname into first & last
+      const nameParts = user.fullname.split(" ");
+      finalCustomerName = {
+        firstName: nameParts[0],
+        lastName: nameParts.slice(1).join(" ") || "",
+      };
+
+      customerPhone = user.address?.phone || "Not Provided";
+
+      // ✅ Logged-in users DO NOT need OTP
     }
 
-    // ------------------ Customer info ------------------
-    const customerId = req.user ? req.user.id : null;
+    // =====================================================
+    // 👤 IF GUEST USER
+    // =====================================================
+    else {
+      if (!email || !customerName?.firstName || !customerName?.lastName) {
+        return res.status(400).json({
+          message: "Email, first name, and last name are required",
+        });
+      }
 
-    // ------------------ Commission ------------------
+      const otpRecord = otpStore.get(email);
+
+      if (!otpRecord)
+        return res.status(400).json({ message: "OTP not found" });
+
+      if (!otpRecord.verified)
+        return res.status(400).json({ message: "OTP not verified" });
+
+      if (Date.now() > otpRecord.expiresAt) {
+        otpStore.delete(email);
+        return res.status(400).json({ message: "OTP expired" });
+      }
+
+      finalEmail = email;
+      finalCustomerName = customerName;
+      customerPhone = otpRecord.phone || "Not Provided";
+
+      otpStore.delete(email);
+    }
+
+    // =====================================================
+    // 💰 Commission Calculation
+    // =====================================================
     const commissionPercent = 15;
     const adminCommission = (totalPrice * commissionPercent) / 100;
     const restaurantAmount = totalPrice - adminCommission;
 
-    // ------------------ Create order ------------------
+    // =====================================================
+    // 🧾 CREATE ORDER
+    // =====================================================
     const order = await Order.create({
       customerId,
-      customerPhone: otpRecord.phone || "Not Provided",
-      customerEmail: email,
-      customerName,
+      customerPhone,
+      customerEmail: finalEmail,
+      customerName: finalCustomerName,
 
       restaurantId,
       items,
       totalPrice,
 
       paymentMethod,
-      paymentStatus: "PENDING", // initially pending
+      paymentStatus: "PENDING",
       paymentReference: "",
 
-      orderStatus: "PENDING", // initially pending
+      orderStatus: "PENDING",
 
-      // ✅ Add unseen fields
-      isSeen: false, // for owner
-      adminSeen: false, // for admin
+      isSeen: false,
+      adminSeen: false,
 
       commissionPercent,
       adminCommission,
@@ -130,18 +174,17 @@ export const createOrder = async (req, res) => {
       instructions,
     });
 
-    // ------------------ Clear OTP ------------------
-    otpStore.delete(email);
-
-    // ------------------ Get io instance ------------------
+    // =====================================================
+    // 🔔 REALTIME NOTIFICATION
+    // =====================================================
     const io = req.app.get("io");
 
-    // ------------------ Owner Notification ------------------
     const restaurant = await Restaurant.findById(restaurantId);
     if (restaurant?.ownerId) {
-      const ownerId = restaurant.ownerId.toString();
+      const ownerSocketId = onlineOwners.get(
+        restaurant.ownerId.toString()
+      );
 
-      const ownerSocketId = onlineOwners.get(ownerId);
       if (ownerSocketId) {
         io.to(ownerSocketId).emit("newOrder", {
           orderId: order._id,
@@ -151,24 +194,11 @@ export const createOrder = async (req, res) => {
       }
     }
 
-    // ------------------ Admin Notification ------------------
-    // Notify all online admins if order is PAID & CONFIRMED
-    if (order.paymentStatus === "PAID" && order.orderStatus === "CONFIRMED") {
-      // emit to all online admins
-      onlineAdmins.forEach((socketId) => {
-        io.to(socketId).emit("adminNewOrder", {
-          orderId: order._id,
-          restaurantId,
-          message: "New PAID & CONFIRMED order",
-        });
-      });
-    }
-
-    // ------------------ Return response ------------------
     return res.status(201).json({
-      message: "Order created successfully. Payment pending.",
+      message: "Order created successfully",
       orderId: order._id,
     });
+
   } catch (error) {
     console.error("Create order error:", error);
     return res.status(500).json({
@@ -331,30 +361,62 @@ export const getOrdersByGuestPhone = async (req, res) => {
 
 export const updateOrderStatus = async (req, res) => {
   try {
-    // Allow updating either orderStatus, paymentStatus, or both
     const { orderStatus, paymentStatus } = req.body;
 
     if (!orderStatus && !paymentStatus) {
       return res.status(400).json({ message: "No fields to update" });
     }
 
-    // Build update object dynamically
-    const updates = {};
-    if (orderStatus) updates.orderStatus = orderStatus;
-    if (paymentStatus) updates.paymentStatus = paymentStatus;
+    // Get existing order first
+    const order = await Order.findById(req.params.id);
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true }, // return the updated document
-    );
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    // Update fields
+    if (orderStatus) order.orderStatus = orderStatus;
+    if (paymentStatus) order.paymentStatus = paymentStatus;
 
-    res.json({ message: "Order updated", order });
+    // ✅ If order becomes PAID + CONFIRMED → reset adminSeen
+    if (order.paymentStatus === "PAID" && order.orderStatus === "CONFIRMED") {
+      order.adminSeen = false;
+    }
+
+    // Save updated order
+    await order.save();
+
+    // ✅ Notify admins ONLY when PAID + CONFIRMED
+    if (order.paymentStatus === "PAID" && order.orderStatus === "CONFIRMED") {
+      const io = req.app.get("io");
+
+      onlineAdmins.forEach((socketId) => {
+        io.to(socketId).emit("adminNewOrder", {
+          orderId: order._id,
+          restaurantId: order.restaurantId,
+          message: "New PAID & CONFIRMED order",
+        });
+      });
+
+      console.log("Admin notified for order:", order._id);
+    }
+
+    // ✅ NEW: Trigger review notification when order is DELIVERED
+    if (order.orderStatus === "DELIVERED") {
+      await createReviewNotification(order);
+    }
+
+
+    res.json({
+      message: "Order updated successfully",
+      order,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Update order error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 

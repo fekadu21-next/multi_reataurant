@@ -16,8 +16,8 @@ import {
   getAdminUnseenCount,
   markAdminSeen,
 } from "../controllers/orderController.js";
-import { auth } from "../middleware/Auth.js";
-
+import { auth } from "../middleware/auth.js";
+import { optionalProtect } from "../middleware/authmiddlewr.js"
 const router = express.Router();
 
 // 🔹 OTP routes
@@ -25,7 +25,7 @@ router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
 
 // 🛒 Create order (only after OTP verified)
-router.post("/", createOrder);
+router.post("/", optionalProtect, createOrder);
 router.get("/sinorders/:id", getOrderById);
 // 👤 Logged-in customer orders
 router.get("/my-orderss", auth, getOrdersByCustomer);

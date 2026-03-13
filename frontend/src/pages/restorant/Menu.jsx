@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { FiEdit, FiTrash2, FiPlus, FiGrid, FiList } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiPlus, FiGrid, FiList, FiCheckCircle, FiXCircle, FiTag, FiDollarSign } from "react-icons/fi";
 
 const API_URL = "http://localhost:5000";
 
 export default function Menu() {
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-
   const rawRestaurantId = storedUser?.restaurant?.restaurantId;
 
   const restaurantId =
@@ -41,7 +40,7 @@ export default function Menu() {
   const getImageUrl = (path) =>
     path ? `${API_URL}${path.startsWith("/") ? "" : "/"}${path}` : null;
 
-  /* ================= FETCH RESTAURANT ================= */
+  /* ================= FETCH DATA ================= */
   const fetchRestaurant = async () => {
     if (!restaurantId) return;
     const res = await fetch(`${API_URL}/api/restaurants/${restaurantId}`);
@@ -49,7 +48,6 @@ export default function Menu() {
     setRestaurant(data);
   };
 
-  /* ================= FETCH CATEGORIES ================= */
   const fetchCategories = async () => {
     try {
       const res = await fetch(`${API_URL}/api/categories`);
@@ -60,12 +58,9 @@ export default function Menu() {
     }
   };
 
-  /* ================= FETCH MENU ================= */
   const fetchMenu = async () => {
     if (!restaurantId) return;
-    const res = await fetch(
-      `${API_URL}/api/menu-items/restaurant/${restaurantId}`,
-    );
+    const res = await fetch(`${API_URL}/api/menu-items/restaurant/${restaurantId}`);
     const data = await res.json();
     setItems(Array.isArray(data) ? data : []);
   };
@@ -76,14 +71,10 @@ export default function Menu() {
     fetchMenu();
   }, [restaurantId]);
 
-  /* ================= SUBMIT ================= */
+  /* ================= ACTIONS ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const url = editingItem
-      ? `${API_URL}/api/menu-items/${editingItem._id}`
-      : `${API_URL}/api/menu-items`;
-
+    const url = editingItem ? `${API_URL}/api/menu-items/${editingItem._id}` : `${API_URL}/api/menu-items`;
     const method = editingItem ? "PUT" : "POST";
 
     const formData = new FormData();
@@ -103,205 +94,242 @@ export default function Menu() {
       return;
     }
 
-    showMessage(editingItem ? "Menu updated!" : "Menu added!");
+    showMessage(editingItem ? "Menu updated successfully!" : "Item added to menu!");
     setShowModal(false);
     setEditingItem(null);
-    setForm({
-      name: "",
-      description: "",
-      categoryId: "",
-      price: "",
-      image: null,
-      isAvailable: true,
-    });
+    setForm({ name: "", description: "", categoryId: "", price: "", image: null, isAvailable: true });
     fetchMenu();
   };
-  console.log("Stored user:", storedUser);
-  console.log("Restaurant object:", storedUser?.restaurant);
-  console.log("Restaurant ID extracted:", restaurantId);
-  /* ================= DELETE ================= */
+
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this menu item?")) return;
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
     await fetch(`${API_URL}/api/menu-items/${id}`, { method: "DELETE" });
-    showMessage("Menu deleted!");
+    showMessage("Menu item removed");
     fetchMenu();
   };
 
   return (
-    <div className="w-full px-6 py-6">
-      {/* ================= RESTAURANT HEADER ================= */}
-      <div className="flex justify-center mb-8">
-        <div className="text-center">
-          <h1 className="text-xl font-extrabold tracking-wide bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent drop-shadow">
+    <div className="max-w-7xl mx-auto p-6 space-y-8 animate-in fade-in duration-500">
+
+      {/* HEADER & STATS */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             {restaurant?.name || "Restaurant Menu"}
           </h1>
+          <p className="text-gray-500 mt-1 italic">Manage your flavors and pricing</p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="bg-orange-50 px-6 py-3 rounded-xl border border-orange-100 text-center">
+            <div className="text-2xl font-bold text-orange-600">{items.length}</div>
+            <p className="text-[10px] uppercase font-bold text-orange-400">Total Items</p>
+          </div>
+
+          <button
+            onClick={() => {
+              setEditingItem(null);
+              setForm({ name: "", description: "", categoryId: "", price: "", image: null, isAvailable: true });
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-blue-200 transition-all font-semibold"
+          >
+            <FiPlus strokeWidth={3} /> Add New Item
+          </button>
         </div>
       </div>
 
-      {/* ================= MESSAGE ================= */}
-      {message && (
-        <div className="fixed top-5 right-5 bg-green-600 text-white px-4 py-2 rounded shadow">
-          {message}
+      {/* VIEW CONTROLS */}
+      <div className="flex justify-between items-center bg-gray-50/50 p-2 rounded-2xl border border-gray-100">
+        <div className="flex gap-1">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600 font-bold" : "text-gray-500"}`}
+          >
+            <FiGrid /> Grid
+          </button>
+          <button
+            onClick={() => setViewMode("table")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${viewMode === "table" ? "bg-white shadow-sm text-blue-600 font-bold" : "text-gray-500"}`}
+          >
+            <FiList /> Table
+          </button>
+        </div>
+      </div>
+
+      {/* ================= MAIN CONTENT ================= */}
+      {viewMode === "grid" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {items.map((item) => (
+            <div key={item._id} className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="relative h-48 w-full bg-gray-100">
+                {item.image ? (
+                  <img src={getImageUrl(item.image)} className="w-full h-full object-cover" alt={item.name} />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-300"><FiGrid size={40} /></div>
+                )}
+                <div className="absolute top-3 right-3">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm ${item.isAvailable ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
+                    {item.isAvailable ? "Available" : "Sold Out"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-2">
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-gray-900 text-lg leading-tight truncate">{item.name}</h3>
+                </div>
+                <div className="flex items-center gap-1 text-blue-600 font-bold text-lg">
+                  <span className="text-sm font-medium">ETB</span> {item.price}
+                </div>
+                <p className="text-xs text-gray-400 font-medium flex items-center gap-1 uppercase tracking-tighter">
+                  <FiTag /> {item.categoryId?.name || "Uncategorized"}
+                </p>
+
+                <div className="flex gap-2 pt-4">
+                  <button
+                    onClick={() => {
+                      setEditingItem(item);
+                      setForm({ name: item.name, description: item.description || "", categoryId: item.categoryId?._id || "", price: item.price, image: null, isAvailable: item.isAvailable });
+                      setShowModal(true);
+                    }}
+                    className="flex-1 flex justify-center items-center gap-2 py-2 bg-blue-50 text-blue-600 rounded-lg font-bold text-sm hover:bg-blue-600 hover:text-white transition-colors"
+                  >
+                    <FiEdit size={14} /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item._id)}
+                    className="p-2 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+                  >
+                    <FiTrash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* TABLE VIEW */
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Item</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Category</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Price</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Status</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {items.map((item) => (
+                <tr key={item._id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <img src={getImageUrl(item.image)} className="w-10 h-10 rounded-lg object-cover bg-gray-100" />
+                      <span className="font-bold text-gray-800">{item.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500 font-medium">{item.categoryId?.name}</td>
+                  <td className="px-6 py-4 font-bold text-blue-600">{item.price} ETB</td>
+                  <td className="px-6 py-4">
+                    {item.isAvailable ? (
+                      <span className="flex items-center gap-1 text-green-600 text-xs font-bold uppercase"><FiCheckCircle /> Available</span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-red-500 text-xs font-bold uppercase"><FiXCircle /> Sold Out</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => { setEditingItem(item); setForm({ name: item.name, description: item.description || "", categoryId: item.categoryId?._id || "", price: item.price, image: null, isAvailable: item.isAvailable }); setShowModal(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><FiEdit /></button>
+                      <button onClick={() => handleDelete(item._id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><FiTrash2 /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* ================= HEADER CONTROLS ================= */}
-      <div className="flex justify-end gap-2 mb-4">
-        <button
-          onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
-          className="px-3 py-2 bg-gray-200 rounded flex items-center gap-1"
-        >
-          {viewMode === "grid" ? <FiList /> : <FiGrid />}
-          {viewMode === "grid" ? "Table View" : "Grid View"}
-        </button>
-
-        <button
-          onClick={() => {
-            setEditingItem(null);
-            setForm({
-              name: "",
-              description: "",
-              categoryId: "",
-              price: "",
-              image: null,
-              isAvailable: true,
-            });
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded shadow"
-        >
-          <FiPlus /> Add Menu Item
-        </button>
-      </div>
-
-      {/* ================= GRID VIEW ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {items.map((item) => (
-          <div key={item._id} className="bg-white p-5 rounded shadow">
-            <h3 className="font-semibold text-lg">{item.name}</h3>
-            <p className="text-sm text-gray-500">
-              {item.categoryId?.name || "No category"}
-            </p>
-            <p className="font-bold text-blue-600 mt-1">{item.price} ETB</p>
-
-            {item.image && (
-              <img
-                src={getImageUrl(item.image)}
-                className="w-full h-32 object-cover rounded mt-2"
-              />
-            )}
-
-            <div className="flex gap-2 mt-4">
-              <button
-                onClick={() => {
-                  setEditingItem(item);
-                  setForm({
-                    name: item.name,
-                    description: item.description || "",
-                    categoryId: item.categoryId?._id || "",
-                    price: item.price,
-                    image: null,
-                    isAvailable: item.isAvailable,
-                  });
-                  setShowModal(true);
-                }}
-                className="px-3 py-1 border rounded text-blue-600"
-              >
-                <FiEdit /> Edit
-              </button>
-
-              <button
-                onClick={() => handleDelete(item._id)}
-                className="px-3 py-1 border rounded text-red-600"
-              >
-                <FiTrash2 /> Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* ================= MODAL ================= */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          {/* Added max-h-[90vh] and flex-col to allow internal scrolling */}
           <form
             onSubmit={handleSubmit}
-            className="bg-white p-6 rounded w-full max-w-md"
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-300"
           >
-            <h2 className="font-semibold mb-3">
-              {editingItem ? "Edit Menu Item" : "Add Menu Item"}
-            </h2>
+            {/* FIXED HEADER */}
+            <div className="bg-blue-600 p-5 text-white shrink-0">
+              <h2 className="text-xl font-bold">{editingItem ? "Edit Menu Item" : "Create New Menu Item"}</h2>
+              <p className="text-blue-100 text-xs">Fill in the details below to update your menu</p>
+            </div>
 
-            <input
-              className="border p-2 w-full mb-2"
-              placeholder="Name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-            />
+            {/* SCROLLABLE FORM BODY */}
+            <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase ml-1">Item Name</label>
+                  <input className="w-full border-gray-200 border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 transition-all outline-none text-sm" placeholder="e.g. Special Tibs" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </div>
 
-            <select
-              className="border p-2 w-full mb-2"
-              value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-              required
-            >
-              <option value="">Select Category</option>
-              {categories.map((cat) => (
-                <option key={cat._id} value={cat._id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+                <div className="col-span-1">
+                  <label className="text-xs font-bold text-gray-400 uppercase ml-1">Category</label>
+                  <select className="w-full border-gray-200 border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} required>
+                    <option value="">Select...</option>
+                    {categories.map((cat) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
+                  </select>
+                </div>
 
-            <textarea
-              className="border p-2 w-full mb-2"
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-            />
+                <div className="col-span-1">
+                  <label className="text-xs font-bold text-gray-400 uppercase ml-1">Price (ETB)</label>
+                  <input type="number" className="w-full border-gray-200 border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="0.00" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+                </div>
+              </div>
 
-            <input
-              type="number"
-              className="border p-2 w-full mb-2"
-              placeholder="Price"
-              value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
-              required
-            />
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase ml-1">Description</label>
+                <textarea rows="2" className="w-full border-gray-200 border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="Briefly describe this dish..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              </div>
 
-            <input
-              type="file"
-              className="mb-2"
-              onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
-            />
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase ml-1">Item Photo</label>
+                <div className="mt-1 border-2 border-dashed border-gray-200 rounded-xl p-3 text-center hover:border-blue-400 transition-colors cursor-pointer relative">
+                  <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => setForm({ ...form, image: e.target.files[0] })} />
+                  <p className="text-xs text-gray-500 truncate px-2">{form.image ? form.image.name : "Click to upload image"}</p>
+                </div>
+              </div>
 
-            <label className="flex gap-2 mb-3">
-              <input
-                type="checkbox"
-                checked={form.isAvailable}
-                onChange={(e) =>
-                  setForm({ ...form, isAvailable: e.target.checked })
-                }
-              />
-              Available
-            </label>
+              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <input type="checkbox" className="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500" checked={form.isAvailable} onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })} />
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">Available in App</span>
+              </div>
+            </div>
 
-            <div className="flex justify-end gap-2">
+            {/* FIXED FOOTER */}
+            <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="bg-gray-300 px-3 py-2 rounded"
+                className="px-5 py-2 rounded-xl text-gray-500 font-bold hover:bg-gray-200 transition-all text-sm"
               >
                 Cancel
               </button>
-              <button className="bg-blue-600 text-white px-3 py-2 rounded">
-                {editingItem ? "Update" : "Add"}
+              <button
+                className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all text-sm"
+              >
+                {editingItem ? "Save Changes" : "Create Item"}
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* SUCCESS POPUP */}
+      {message && (
+        <div className="fixed bottom-10 right-10 bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-300 z-[100]">
+          <FiCheckCircle className="text-green-400" /> {message}
         </div>
       )}
     </div>

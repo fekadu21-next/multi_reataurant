@@ -5,74 +5,106 @@ import {
   FiAlertCircle,
   FiLogOut,
   FiShoppingBag,
-  FiInstagram,
   FiFileText,
 } from "react-icons/fi";
+import axios from "axios";
+import { io } from "socket.io-client";
+
 import OrdersPage from "./Orders";
 import UsersPage from "./Users";
 import RestaurantsPage from "./Restaurant";
 import Category from "./Category";
-import axios from "axios";
+
+const SOCKET_URL = "http://localhost:5000";
 
 export default function AdminDashboard() {
-  const [activePage, setActivePage] = useState(() => {
-    return localStorage.getItem("activePage") || "dashboard";
-  });
+  const [activePage, setActivePage] = useState(
+    localStorage.getItem("activePage") || "dashboard"
+  );
   const [unseenCount, setUnseenCount] = useState(0);
 
-  // Fetch unseen notifications on load
+  // ---------------- SOCKET LOGIC ----------------
   useEffect(() => {
-    fetchUnseenCount();
+    const socket = io(SOCKET_URL, {
+      withCredentials: true,
+    });
+
+    const adminId = localStorage.getItem("adminId");
+
+    if (adminId) {
+      socket.emit("registerAdmin", adminId);
+      console.log("Admin registered:", adminId);
+    }
+
+    socket.on("adminNewOrder", () => {
+      console.log("New order received (admin)");
+      setUnseenCount((prev) => prev + 1);
+    });
+
+    return () => socket.disconnect();
   }, []);
 
+  // ---------------- FETCH UNSEEN ----------------
   const fetchUnseenCount = async () => {
     try {
       const res = await axios.get(
         "http://localhost:5000/api/orders/admin/unseen-count",
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       );
       setUnseenCount(res.data.unseenCount);
     } catch (err) {
-      console.error("Error fetching unseen count:", err);
+      console.error("Error fetching unseen count", err);
     }
   };
 
-  const handlePageChange = (page) => {
+  useEffect(() => {
+    fetchUnseenCount();
+  }, []);
+
+  // ---------------- PAGE SWITCH ----------------
+  const handlePageChange = async (page) => {
     setActivePage(page);
     localStorage.setItem("activePage", page);
 
     if (page === "orders") {
-      // Mark notifications as seen when opening Orders page
-      axios.post(
-        "http://localhost:5000/api/orders/admin/mark-seen",
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
-      );
-      setUnseenCount(0);
+      try {
+        await axios.post(
+          "http://localhost:5000/api/orders/admin/mark-seen",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        setUnseenCount(0);
+        } catch (err) {
+        console.error("Error marking seen", err);
+      }
     }
   };
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:5000/api/auth/logout", { method: "POST" });
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      window.location.href = "/";
+      await fetch("http://localhost:5000/api/auth/logout", {
+        method: "POST",
+      });
     } catch (error) {
       console.log("Logout error:", error);
     }
+    localStorage.clear();
+    window.location.href = "/";
   };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
+      {/* ---------------- Sidebar ---------------- */}
       <aside className="w-64 bg-[#1F1F25] text-gray-300 flex flex-col">
-        <div className="p-6 flex items-center justify-between">
-          <div className="text-xl font-bold text-white">Addis Eats</div>
-        </div>
+        <div className="p-6 text-xl font-bold text-white">Addis Eats Admin</div>
 
         <nav className="flex-1 space-y-2 px-4">
           <SidebarItem
@@ -101,14 +133,17 @@ export default function AdminDashboard() {
           />
           <SidebarItem
             icon={<FiFileText />}
-            label={`Orders ${unseenCount > 0 ? `(${unseenCount})` : ""}`}
+            label="Orders"
             active={activePage === "orders"}
             onClick={() => handlePageChange("orders")}
+            badge={unseenCount}
           />
         </nav>
       </aside>
 
+      {/* ---------------- Main Content ---------------- */}
       <main className="flex-1 p-6 overflow-y-auto">
+        {/* Header Section with Logout on the Right */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">
             {activePage === "dashboard" && "Admin Overview"}
@@ -120,13 +155,14 @@ export default function AdminDashboard() {
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-white bg-red-500 px-4 py-2 rounded hover:bg-red-600 shadow"
+            className="flex items-center gap-2 text-white bg-red-500 px-4 py-2 rounded hover:bg-red-600 shadow transition-colors"
           >
             <FiLogOut />
             Logout
           </button>
         </div>
 
+        {/* Dynamic Pages */}
         {activePage === "dashboard" && <DashboardPage />}
         {activePage === "users" && <UsersPage />}
         {activePage === "restaurants" && <RestaurantsPage />}
@@ -137,24 +173,10 @@ export default function AdminDashboard() {
   );
 }
 
-function SidebarItem({ icon, label, active, onClick }) {
-  return (
-    <div
-      onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-2 rounded cursor-pointer 
-      ${active ? "bg-gray-700 text-white" : "hover:bg-gray-700"}`}
-    >
-      <span className="text-lg">{icon}</span>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-/* ---------------- Dashboard Page ---------------- */
+/* ---------------- Dashboard Page (Dummy Content) ---------------- */
 function DashboardPage() {
   return (
     <div>
-      {/* ---------- Stats ---------- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <div className="text-gray-600">Total Orders</div>
@@ -164,109 +186,68 @@ function DashboardPage() {
 
         <Card>
           <div className="text-gray-600">Weekly Revenue</div>
-          <div className="text-3xl font-bold mt-2">12</div>
-          <div className="text-gray-500 mt-1">245,000 ETB</div>
+          <div className="text-3xl font-bold mt-2">245,000 ETB</div>
+          <div className="text-gray-500 text-sm mt-1">Total platform earnings</div>
         </Card>
 
         <Card>
-          <div className="text-gray-600">New Registrations</div>
+          <div className="text-gray-600">Risk Alerts</div>
           <div className="text-3xl font-bold mt-2 text-red-500">
-            3 High-Risk Orders
+            3 High-Risk
           </div>
-          <button className="mt-3 text-sm text-white bg-red-500 px-4 py-1 rounded">
-            View Details
+          <button className="mt-3 text-sm text-white bg-red-500 px-4 py-1 rounded hover:bg-red-600">
+            Review Now
           </button>
         </Card>
       </div>
 
-      {/* ---------- Analytics & Alerts ---------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         <Card>
-          <h2 className="text-gray-700 font-semibold mb-4">
-            Platform Analytics
-          </h2>
-          <p className="text-sm text-gray-500 mb-2">Order Trends by Cuisine</p>
+          <h2 className="text-gray-700 font-semibold mb-4">Platform Analytics</h2>
           <div className="flex space-x-6 mt-4">
-            <Bar
-              title="Traditional"
-              bars={[30, 60, 80]}
-              colors={["bg-blue-500", "bg-blue-400", "bg-blue-300"]}
-            />
-            <Bar
-              title="Fast Food"
-              bars={[40, 70, 120]}
-              colors={["bg-green-500", "bg-green-400", "bg-green-300"]}
-            />
-            <Bar
-              title="International"
-              bars={[60, 100, 150]}
-              colors={["bg-red-500", "bg-red-400", "bg-red-300"]}
-            />
+            <Bar title="Tradit." bars={[30, 60, 80]} colors={["bg-blue-500", "bg-blue-400", "bg-blue-300"]} />
+            <Bar title="Fast F." bars={[40, 70, 120]} colors={["bg-green-500", "bg-green-400", "bg-green-300"]} />
+            <Bar title="Intl." bars={[60, 100, 150]} colors={["bg-red-500", "bg-red-400", "bg-red-300"]} />
           </div>
         </Card>
 
         <Card>
-          <h2 className="text-gray-700 font-semibold mb-4">AI Fraud Alerts</h2>
-          <p className="text-lg font-bold text-red-500">3 High-Risk Orders</p>
-          <button className="mt-3 text-sm bg-red-500 text-white py-1 px-4 rounded">
-            Review Restaurants
-          </button>
-
-          <div className="mt-6">
-            <h3 className="text-gray-600 text-sm mb-2">Recent Activity</h3>
-            <AlertItem text="User ‘GWT’ anti-installation" />
-            <AlertItem text="User ‘Kidst A.’ reviewed order #2021" />
+          <h2 className="text-gray-700 font-semibold mb-4">Recent System Logs</h2>
+          <div className="mt-4">
+            <AlertItem text="New restaurant 'Lucy Hotel' registered" />
+            <AlertItem text="User feedback received for order #2021" />
+            <AlertItem text="Server maintenance scheduled for 2 AM" />
           </div>
         </Card>
       </div>
-
-      {/* ---------- Restaurant Approvals ---------- */}
-      <Card className="mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-gray-700 font-semibold">
-            Pending Restaurant Approvals
-          </h2>
-          <button className="bg-red-500 text-white px-4 py-1 rounded text-sm">
-            Approve / Reject
-          </button>
-        </div>
-
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">Name</th>
-              <th>Owner Email</th>
-              <th>Date</th>
-              <th>Orders</th>
-              <th>Rating</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b text-gray-600">
-              <td className="py-3">Lucy Hotel</td>
-              <td>admin@lucy.com</td>
-              <td>Jan 4</td>
-              <td>124</td>
-              <td>4.8</td>
-            </tr>
-            <tr className="border-b text-gray-600">
-              <td className="py-3">Kidist Restaurant</td>
-              <td>kidist@gmail.com</td>
-              <td>Jan 5</td>
-              <td>83</td>
-              <td>4.5</td>
-            </tr>
-          </tbody>
-        </table>
-      </Card>
     </div>
   );
 }
 
 /* ---------------- Reusable Components ---------------- */
-function Card({ children, className }) {
+function SidebarItem({ icon, label, active, onClick, badge }) {
   return (
-    <div className={`bg-white p-6 rounded-lg shadow ${className}`}>
+    <div
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-2 rounded cursor-pointer transition-colors 
+      ${active ? "bg-gray-700 text-white" : "hover:bg-gray-700"}`}
+    >
+      <span className="text-lg relative">
+        {icon}
+        {badge > 0 && (
+          <span className="absolute -top-0 -right-22 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            {badge}
+          </span>
+        )}
+      </span>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function Card({ children, className = "" }) {
+  return (
+    <div className={`bg-white p-6 rounded-lg shadow-sm border border-gray-100 ${className}`}>
       {children}
     </div>
   );
@@ -275,12 +256,12 @@ function Card({ children, className }) {
 function Bar({ title, bars, colors }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="space-y-1">
+      <div className="flex items-end gap-1 h-20">
         {bars.map((height, i) => (
           <div
             key={i}
-            className={`${colors[i]} w-6 rounded`}
-            style={{ height: `${height}px` }}
+            className={`${colors[i]} w-4 rounded-t`}
+            style={{ height: `${height / 2}px` }}
           ></div>
         ))}
       </div>
@@ -292,7 +273,7 @@ function Bar({ title, bars, colors }) {
 function AlertItem({ text }) {
   return (
     <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-      <FiAlertCircle className="text-red-500" />
+      <FiAlertCircle className="text-blue-500" />
       {text}
     </div>
   );

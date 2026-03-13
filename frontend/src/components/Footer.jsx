@@ -69,8 +69,8 @@ export default function Footer() {
                   className={`w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.4)] ${social.color} hover:text-white`}
                 >
                   {typeof social.icon === "object" &&
-                  social.name !== "Telegram" &&
-                  social.name !== "TikTok" ? (
+                    social.name !== "Telegram" &&
+                    social.name !== "TikTok" ? (
                     social.icon
                   ) : (
                     <svg

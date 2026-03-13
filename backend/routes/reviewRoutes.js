@@ -1,19 +1,21 @@
 import express from "express";
 import {
   createReview,
-  getReviews,
-  getReviewsByRestaurant,
-  updateReview,
-  deleteReview,
+  getRestaurantReviews,
+  checkReviewStatus,
 } from "../controllers/reviewController.js";
+
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// CRUD routes
-router.post("/", createReview); // Add a review
-router.get("/", getReviews); // Get all reviews
-router.get("/restaurant/:restaurantId", getReviewsByRestaurant);
-router.put("/:id", updateReview); // Update a review
-router.delete("/:id", deleteReview); // Delete a review
+// create review
+router.post("/create/:orderId", protect, createReview);
+
+// get restaurant reviews
+router.get("/restaurant/:restaurantId", getRestaurantReviews);
+
+// check if order reviewed
+router.get("/check/:orderId", protect, checkReviewStatus);
 
 export default router;

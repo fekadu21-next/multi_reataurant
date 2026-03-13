@@ -18,6 +18,10 @@ import Register from "./pages/auth/Register";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import RestaurantDashboard from "./pages/restorant/Dashboard";
 
+import OrdersPageAccount from "./pages/account/OrdersPage";
+import FavoritesPage from "./pages/account/FavoritesPage";
+import AccountSettingsPage from "./pages/account/AccountSettingsPage";
+
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -59,6 +63,12 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/restaurant/:id" element={<RestaurantMenu />} />
+
+
+              <Route path="/account/myorders" element={<OrdersPageAccount />} />
+              <Route path="/account/favorites" element={<FavoritesPage />} />
+              <Route path="/account" element={<AccountSettingsPage />} />
+
 
               {/* Cart + Checkout */}
               <Route path="/cart" element={<CartPage />} />

@@ -12,7 +12,8 @@ import {
 import Menu from "./Menu";
 import Orders from "./Orders";
 import axios from "axios";
-
+import Reviews from "./Reviews";
+import Customers from "./Customers";
 const API_URL = "http://localhost:5000";
 
 export default function Dashboard() {
@@ -75,9 +76,19 @@ export default function Dashboard() {
             badge={unseenCount}
           />
 
-          <SidebarItem icon={<FiUsers />} label="Customers" />
+          <SidebarItem
+            icon={<FiUsers />}
+            label="Customers"
+            active={activePage === "customers"}
+            onClick={() => setActivePage("customers")}
+          />
           <SidebarItem icon={<FiBarChart />} label="Sales Analytics" />
-          <SidebarItem icon={<FiStar />} label="Reviews" />
+          <SidebarItem
+            icon={<FiStar />}
+            label="Reviews"
+            active={activePage === "reviews"}
+            onClick={() => setActivePage("reviews")}
+          />
           <SidebarItem icon={<FiSettings />} label="Settings" />
         </nav>
       </aside>
@@ -88,7 +99,8 @@ export default function Dashboard() {
           <h1 className="text-2xl font-semibold mb-6">
             {activePage === "dashboard" && "Restaurant Overview"}
             {activePage === "menu" && "Menu Items"}
-            {activePage === "orders" && "Orders"}
+            {/* {activePage === "orders" && "Orders"} */}
+            {/* {activePage === "reviews" && "Customer Reviews"} */}
           </h1>
 
           <div
@@ -101,6 +113,8 @@ export default function Dashboard() {
         {activePage === "dashboard" && <DashboardContent />}
         {activePage === "menu" && <Menu />}
         {activePage === "orders" && <Orders onSeen={() => setUnseenCount(0)} />}
+        {activePage === "reviews" && <Reviews />}
+        {activePage === "customers" && <Customers />}
       </main>
     </div>
   );
@@ -142,7 +156,7 @@ function SidebarItem({ icon, label, active, onClick, badge }) {
       <span className="text-lg relative">
         {icon}
         {badge > 0 && (
-          <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+          <span className="absolute -top-0 -right-22 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
             {badge}
           </span>
         )}

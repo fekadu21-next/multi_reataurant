@@ -1,75 +1,105 @@
 import Review from "../models/Review.js";
+import Order from "../models/Order.js";
+import Restaurant from "../models/Restaurant.js";
 
-// CREATE a new review
 export const createReview = async (req, res) => {
   try {
-    const { userId, restaurantId, rating, comment, images } = req.body;
+    const userId = req.user.id;
+    const { orderId } = req.params;
+    const { rating, comment, images } = req.body;
 
-    // Optional: Check if user already reviewed this restaurant
-    const exists = await Review.findOne({ userId, restaurantId });
-    if (exists)
+    // 1️⃣ Check order
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // 2️⃣ Check ownership
+    if (order.customerId.toString() !== userId) {
+      return res.status(403).json({ message: "You cannot review this order" });
+    }
+
+    // 3️⃣ Check delivery status
+    if (order.orderStatus !== "DELIVERED") {
       return res
         .status(400)
-        .json({ message: "You already reviewed this restaurant" });
+        .json({ message: "You can review only delivered orders" });
+    }
 
-    const review = await Review.create({
+    // 4️⃣ Prevent duplicate review
+    const existingReview = await Review.findOne({ orderId });
+
+    if (existingReview) {
+      return res.status(400).json({ message: "Order already reviewed" });
+    }
+
+    // 5️⃣ Create review
+    const review = new Review({
       userId,
-      restaurantId,
+      orderId,
+      restaurantId: order.restaurantId,
       rating,
       comment,
       images,
     });
 
-    res.status(201).json({ message: "Review added", review });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+    await review.save();
 
-// GET all reviews
-export const getReviews = async (req, res) => {
-  try {
-    const reviews = await Review.find()
-      .populate("userId", "fullname profileImage")
-      .populate("restaurantId", "name");
-    res.json(reviews);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+    // 6️⃣ Update restaurant rating
+    const reviews = await Review.find({ restaurantId: order.restaurantId });
 
-// GET reviews by restaurant
-export const getReviewsByRestaurant = async (req, res) => {
-  try {
-    const reviews = await Review.find({
-      restaurantId: req.params.restaurantId,
-    }).populate("userId", "fullname profileImage");
-    res.json(reviews);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+    const avgRating =
+      reviews.reduce((acc, item) => acc + item.rating, 0) / reviews.length;
 
-// UPDATE a review
-export const updateReview = async (req, res) => {
-  try {
-    const updated = await Review.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    await Restaurant.findByIdAndUpdate(order.restaurantId, {
+      rating: avgRating,
+      totalReviews: reviews.length,
     });
-    if (!updated) return res.status(404).json({ message: "Review not found" });
-    res.json({ message: "Review updated", review: updated });
+
+    res.status(201).json({
+      message: "Review submitted successfully",
+      review,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// DELETE a review
-export const deleteReview = async (req, res) => {
+export const getRestaurantReviews = async (req, res) => {
   try {
-    const deleted = await Review.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "Review not found" });
-    res.json({ message: "Review deleted" });
+    const { restaurantId } = req.params;
+
+    const reviews = await Review.find({ restaurantId })
+      .populate({
+        path: "userId",
+        select: "fullname profileImage", // fetch user name + profile image
+      })
+      .sort({ createdAt: -1 });
+
+    res.json(reviews);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("Error fetching restaurant reviews:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const checkReviewStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const review = await Review.findOne({ orderId });
+
+    if (review) {
+      return res.json({
+        reviewed: true,
+      });
+    }
+
+    res.json({
+      reviewed: false,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

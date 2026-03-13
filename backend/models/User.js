@@ -42,13 +42,29 @@ const userSchema = new mongoose.Schema(
 
     favorites: [
       {
+        type: {
+          type: String,
+          enum: ["restaurant", "dish"],
+          required: true,
+        },
+
         restaurantId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Restaurant",
+          required: function () {
+            return this.type === "restaurant" || this.type === "dish";
+          },
+        },
+
+        dishId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "MenuItem", // ✅ FIXED
+          required: function () {
+            return this.type === "dish";
+          },
         },
       },
     ],
-
     orderHistory: [
       {
         orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },

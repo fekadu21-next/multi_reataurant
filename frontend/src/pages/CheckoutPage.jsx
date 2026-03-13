@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useCart } from "../context/CartContext";
 import OtpModal from "../components/OtpModal";
 import axios from "axios";
@@ -33,7 +33,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [transactionRef, setTransactionRef] = useState("");
   const [message, setMessage] = useState("");
-
+  const token = localStorage.getItem("token");
+  const isLoggedIn = !!token;
   /* ================= TOTALS ================= */
   const subtotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -49,7 +50,37 @@ export default function CheckoutPage() {
   } else if (cart.length > 1) {
     cartMessage = `${cart.length} items have been added to your cart.`;
   }
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      if (!token) return;
 
+      try {
+        const res = await axios.get(
+          `${API_URL}/user/settings`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const user = res.data.user;
+
+        // Split fullname
+        const nameParts = user.fullname.split(" ");
+
+        setFirstName(nameParts[0] || "");
+        setLastName(nameParts.slice(1).join(" ") || "");
+        setEmail(user.email || "");
+        setPhone(user.address?.phone || "");
+        setStreet(user.address?.street || "");
+        setCity(user.address?.city || "");
+
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+      }
+    };
+
+    fetchUserInfo();
+  }, [token]);
   /* ================= PLACE ORDER ================= */
   const handlePlaceOrder = async () => {
     if (!firstName || !lastName || !phone || !email || !city) {
@@ -71,6 +102,43 @@ export default function CheckoutPage() {
     setMessage("");
 
     try {
+
+      // ===================================================
+      // 🔐 IF USER IS LOGGED IN → NO OTP
+      // ===================================================
+      if (isLoggedIn) {
+        setShowOtp(false);
+        const orderRes = await axios.post(
+          `${API_URL}/orders`,
+          {
+            restaurantId,
+            email, // 🔹 send email
+            customerName: { firstName, lastName }, // 🔹 send customer name
+            items: cart.map((item) => ({
+              menuItemId: item.menuItemId,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+            })),
+            totalPrice: total,
+            paymentMethod,
+            deliveryAddress: { street, city },
+            instructions: "",
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const orderId = orderRes.data.orderId;
+        clearCart();
+        navigate(`/orders/${orderId}`);
+        return;
+      }
+
+      // ===================================================
+      // 👤 GUEST USER → SEND OTP FIRST
+      // ===================================================
       await axios.post(`${API_URL}/orders/send-otp`, {
         email,
         phone,
@@ -78,8 +146,9 @@ export default function CheckoutPage() {
 
       setShowOtp(true);
       setMessage("OTP sent to your email. Please verify.");
+
     } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to send OTP");
+      setMessage(err.response?.data?.message || "Failed to process order");
     } finally {
       setLoading(false);
     }
@@ -87,16 +156,26 @@ export default function CheckoutPage() {
 
   /* ================= VERIFY OTP ================= */
   const handleVerifyOtp = async (otp) => {
+    if (isLoggedIn) return;
     setLoading(true);
     setMessage("");
 
+    const token = localStorage.getItem("token");
+
     try {
-      // 1️⃣ VERIFY OTP
-      await axios.post(`${API_URL}/orders/verify-otp`, { email, otp });
+      // ====================================================
+      // 1️⃣ VERIFY OTP (Guest only)
+      // ====================================================
+      await axios.post(`${API_URL}/orders/verify-otp`, {
+        email,
+        otp,
+      });
 
       setShowOtp(false);
 
-      // 2️⃣ CHAPA → navigate to payment page ONLY
+      // ====================================================
+      // 2️⃣ CHAPA FLOW (Redirect Only)
+      // ====================================================
       if (paymentMethod === "CHAPA") {
         const tx_ref = `TX-${Date.now()}`;
 
@@ -114,31 +193,42 @@ export default function CheckoutPage() {
             address: { street, city },
           },
         });
+
         return;
       }
 
-      // 3️⃣ COD / BANK → create order immediately
-      const orderRes = await axios.post(`${API_URL}/orders`, {
-        restaurantId,
-        email,
-        customerName: { firstName, lastName },
-        items: cart.map((item) => ({
-          menuItemId: item.menuItemId,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-        })),
-        totalPrice: total,
-        paymentMethod,
-        paymentReference: "",
-        deliveryAddress: { street, city },
-        instructions: "",
-      });
+      // ====================================================
+      // 3️⃣ CREATE ORDER (COD / BANK)
+      // ====================================================
+      const orderRes = await axios.post(
+        `${API_URL}/orders`,
+        {
+          restaurantId,
+          email,
+          customerName: { firstName, lastName },
+          items: cart.map((item) => ({
+            menuItemId: item.menuItemId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+          totalPrice: total,
+          paymentMethod,
+          paymentReference: "",
+          deliveryAddress: { street, city },
+          instructions: "",
+        },
+        // ✅ If token exists (edge case), send it
+        token
+          ? { headers: { Authorization: `Bearer ${token}` } }
+          : {}
+      );
 
       const orderId = orderRes.data.orderId;
 
       clearCart();
       navigate(`/orders/${orderId}`);
+
     } catch (err) {
       console.error(err);
       setMessage(err.response?.data?.message || "Something went wrong");
@@ -464,7 +554,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {showOtp && (
+      {!isLoggedIn && showOtp && (
         <OtpModal
           email={email}
           onVerify={handleVerifyOtp}
