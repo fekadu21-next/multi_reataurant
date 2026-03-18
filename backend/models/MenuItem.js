@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const menuItemSchema = new mongoose.Schema(
   {
     restaurantId: {
@@ -7,7 +6,6 @@ const menuItemSchema = new mongoose.Schema(
       ref: "Restaurant",
       required: true,
     },
-
     // 🔗 Reference to Category collection
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -20,7 +18,6 @@ const menuItemSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
     description: {
       type: String,
       trim: true,
@@ -48,5 +45,4 @@ const menuItemSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-
 export default mongoose.model("MenuItem", menuItemSchema);

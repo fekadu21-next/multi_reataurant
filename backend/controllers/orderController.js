@@ -1,11 +1,10 @@
 import Order from "../models/Order.js";
-import Restaurant from "../models/Restaurant.js"; // Adjust path if needed
+import Restaurant from "../models/Restaurant.js";
 import User from "../models/User.js";
 import { onlineOwners, onlineAdmins } from "../Server.js";
 import { createReviewNotification } from "./notificationController.js";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
 const otpStore = new Map();
-
 // ✉️ Send OTP email
 export const sendOtp = async (req, res) => {
   try {
@@ -81,7 +80,6 @@ export const createOrder = async (req, res) => {
     let finalEmail;
     let finalCustomerName;
     let customerPhone = "Not Provided";
-
     // =====================================================
     // 🔐 IF USER IS LOGGED IN
     // =====================================================
@@ -143,6 +141,7 @@ export const createOrder = async (req, res) => {
     const commissionPercent = 15;
     const adminCommission = (totalPrice * commissionPercent) / 100;
     const restaurantAmount = totalPrice - adminCommission;
+
 
     // =====================================================
     // 🧾 CREATE ORDER
@@ -210,34 +209,43 @@ export const createOrder = async (req, res) => {
 export const getAdminUnseenCount = async (req, res) => {
   try {
     const count = await Order.countDocuments({
-      paymentStatus: "PAID",
-      orderStatus: "CONFIRMED",
-      adminSeen: false,
+      adminSeen: false
     });
 
     res.json({ unseenCount: count });
+
   } catch (error) {
     console.error("Get admin unseen count error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
   }
 };
 
 // ------------------ Mark admin notifications as seen ------------------
 export const markAdminSeen = async (req, res) => {
   try {
+
     await Order.updateMany(
-      {
-        paymentStatus: "PAID",
-        orderStatus: "CONFIRMED",
-        adminSeen: false,
-      },
-      { adminSeen: true },
+      { adminSeen: false },
+      { adminSeen: true }
     );
 
-    res.json({ message: "Admin notifications cleared" });
+    res.json({
+      message: "Admin notifications cleared"
+    });
+
   } catch (error) {
+
     console.error("Mark admin seen error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
+
   }
 };
 export const getOrderById = async (req, res) => {
@@ -361,62 +369,61 @@ export const getOrdersByGuestPhone = async (req, res) => {
 
 export const updateOrderStatus = async (req, res) => {
   try {
+
     const { orderStatus, paymentStatus } = req.body;
 
+    // 1️⃣ Validate request
     if (!orderStatus && !paymentStatus) {
-      return res.status(400).json({ message: "No fields to update" });
+      return res.status(400).json({
+        message: "No fields to update",
+      });
     }
 
-    // Get existing order first
+    // 2️⃣ Find the order
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    // Update fields
-    if (orderStatus) order.orderStatus = orderStatus;
-    if (paymentStatus) order.paymentStatus = paymentStatus;
-
-    // ✅ If order becomes PAID + CONFIRMED → reset adminSeen
-    if (order.paymentStatus === "PAID" && order.orderStatus === "CONFIRMED") {
-      order.adminSeen = false;
-    }
-
-    // Save updated order
-    await order.save();
-
-    // ✅ Notify admins ONLY when PAID + CONFIRMED
-    if (order.paymentStatus === "PAID" && order.orderStatus === "CONFIRMED") {
-      const io = req.app.get("io");
-
-      onlineAdmins.forEach((socketId) => {
-        io.to(socketId).emit("adminNewOrder", {
-          orderId: order._id,
-          restaurantId: order.restaurantId,
-          message: "New PAID & CONFIRMED order",
-        });
+      return res.status(404).json({
+        message: "Order not found",
       });
-
-      console.log("Admin notified for order:", order._id);
     }
 
-    // ✅ NEW: Trigger review notification when order is DELIVERED
-    if (order.orderStatus === "DELIVERED") {
-      await createReviewNotification(order);
+    // 3️⃣ Prepare update object
+    const updates = {};
+
+    if (orderStatus) updates.orderStatus = orderStatus;
+    if (paymentStatus) updates.paymentStatus = paymentStatus;
+
+    // 4️⃣ Update order status in database
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      {
+        new: true,
+        runValidators: false
+      }
+    );
+
+    // 5️⃣ If order delivered → ask customer for review
+    if (updatedOrder.orderStatus === "DELIVERED") {
+      await createReviewNotification(updatedOrder);
     }
 
-
+    // 6️⃣ Send response
     res.json({
-      message: "Order updated successfully",
-      order,
+      message: "Order status updated successfully",
+      order: updatedOrder
     });
+
   } catch (error) {
+
     console.error("Update order error:", error);
+
     res.status(500).json({
       message: "Server error",
-      error: error.message,
+      error: error.message
     });
+
   }
 };
 
@@ -424,12 +431,24 @@ export const getOrdersByRestaurant = async (req, res) => {
   try {
     const orders = await Order.find({
       restaurantId: req.params.restaurantId,
-    }).sort({ createdAt: -1 }); // newest first
+    })
+      .populate({
+        path: "items.menuItemId",
+        select: "name categoryId", // only needed fields
+        populate: {
+          path: "categoryId",
+          select: "name", // get category name
+        },
+      })
+      .sort({ createdAt: -1 }); // newest first
 
     res.json(orders);
   } catch (error) {
     console.error("Get orders error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 

@@ -27,7 +27,7 @@ import OrdersPage from "./pages/OrdersPage";
 import CheckoutPage from "./pages/CheckoutPage";
 // import PaymentPage from "./pages/PaymentPage";
 // import PaymentPage from "./pages/PaymentPage";
-import PaymentPage from "./pages/PaymentRedirect";
+// import PaymentPage from "./pages/PaymentRedirect";
 import PaymentSuccess from "./pages/PaymentSuccess";
 
 import "./App.css";
@@ -53,7 +53,6 @@ function LayoutWrapper({ children }) {
     </div>
   );
 }
-
 export default function App() {
   return (
     <CartProvider>
@@ -74,7 +73,7 @@ export default function App() {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/orders/:id" element={<OrdersPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/payment" element={<PaymentPage />} />
+              {/* <Route path="/payment" element={<PaymentPage />} /> */}
               <Route path="/payment-success" element={<PaymentSuccess />} />
               {/* AUTH */}
               <Route path="/login" element={<Login />} />

@@ -6,14 +6,12 @@ import {
   Phone,
   MapPin,
   Send,
-  ArrowRight,
   ChevronRight,
 } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
-  // Social Media Data with specific brand colors for hover effects
   const socials = [
     {
       name: "Telegram",
@@ -32,8 +30,7 @@ export default function Footer() {
     {
       name: "Instagram",
       icon: <Instagram size={20} />,
-      color:
-        "hover:bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]",
+      color: "hover:bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]",
       link: "#",
     },
     {
@@ -41,22 +38,24 @@ export default function Footer() {
       icon: (
         <path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 3 4.6l1 .4v2a5 5 0 0 1-4-1.4V16a6 6 0 1 1-6-6z" />
       ),
-      color: "hover:bg-[#000000]",
+      color: "hover:bg-black dark:hover:bg-white dark:hover:text-black",
       link: "#",
     },
   ];
 
   return (
-    <footer className="bg-[#0f172a] text-gray-300 pt-16 pb-8 px-6">
+    // Updated background and base text color for light mode (Deep Blue)
+    <footer className="bg-[#013864] dark:bg-[#0f172a] text-gray-200 dark:text-gray-300 pt-16 pb-8 px-6 transition-colors duration-500">
       <div className="max-w-[1200px] mx-auto">
         {/* TOP SECTION: GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+
           {/* 1. BRAND & ABOUT */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <span className="text-orange-500 italic">አዲስ</span> Eats
+              <span className="text-orange-500 italic">ማራኪ</span> Eats
             </h2>
-            <p className="text-sm leading-relaxed text-gray-400">
+            <p className="text-sm leading-relaxed text-gray-300 dark:text-gray-400">
               The #1 food delivery platform in Addis Ababa. We connect you with
               the finest hotels and local restaurants, delivering tradition and
               taste right to your doorstep.
@@ -66,22 +65,19 @@ export default function Footer() {
                 <a
                   key={social.name}
                   href={social.link}
-                  className={`w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(0,0,0,0.4)] ${social.color} hover:text-white`}
+                  className={`w-10 h-10 rounded-full bg-white/10 dark:bg-slate-800 flex items-center justify-center transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl ${social.color} hover:text-white group border border-white/10`}
                 >
-                  {typeof social.icon === "object" &&
-                    social.name !== "Telegram" &&
-                    social.name !== "TikTok" ? (
-                    social.icon
-                  ) : (
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      {social.icon}
-                    </svg>
-                  )}
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="text-white dark:text-gray-300 group-hover:text-white"
+                  >
+                    {typeof social.icon === "object" ? social.icon : null}
+                  </svg>
+                  {/* Handle Lucide icons specifically if they aren't path-based */}
+                  {React.isValidElement(social.icon) && social.name !== "Telegram" && social.name !== "TikTok" && social.icon}
                 </a>
               ))}
             </div>
@@ -103,7 +99,7 @@ export default function Footer() {
                 <li key={link}>
                   <a
                     href="#"
-                    className="flex items-center gap-2 text-sm hover:text-orange-500 transition-colors group"
+                    className="flex items-center gap-2 text-sm text-gray-300 hover:text-orange-500 transition-colors group dark:text-gray-400 dark:hover:text-orange-500"
                   >
                     <ChevronRight
                       size={14}
@@ -124,7 +120,7 @@ export default function Footer() {
             <ul className="space-y-5">
               <li className="flex items-start gap-3">
                 <MapPin className="text-orange-500 shrink-0" size={20} />
-                <span className="text-sm">
+                <span className="text-sm text-gray-300 dark:text-gray-400">
                   Bole Road, Near Friendship Mall,
                   <br />
                   Addis Ababa, Ethiopia
@@ -132,11 +128,11 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="text-orange-500 shrink-0" size={20} />
-                <span className="text-sm">+251 911 00 00 00</span>
+                <span className="text-sm text-gray-300 dark:text-gray-400">+251 911 00 00 00</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="text-orange-500 shrink-0" size={20} />
-                <span className="text-sm">support@addiseats.com</span>
+                <span className="text-sm text-gray-300 dark:text-gray-400">support@marakieats.com</span>
               </li>
             </ul>
           </div>
@@ -146,21 +142,21 @@ export default function Footer() {
             <h3 className="text-white font-bold text-lg mb-6 border-l-4 border-orange-500 pl-3">
               Newsletter
             </h3>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-gray-300 dark:text-gray-400 mb-4">
               Subscribe to get offers & news about new restaurants.
             </p>
             <div className="relative">
               <input
                 type="email"
                 placeholder="Email address"
-                className="w-full bg-slate-800 border-none rounded-xl py-3 pl-4 pr-12 focus:ring-2 focus:ring-orange-500 text-sm outline-none"
+                className="w-full bg-white/10 dark:bg-slate-800 border border-white/20 dark:border-none rounded-xl py-3 pl-4 pr-12 focus:ring-2 focus:ring-orange-500 text-sm outline-none text-white placeholder-gray-400"
               />
               <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 p-2 rounded-lg hover:bg-orange-600 transition-colors">
                 <Send size={16} className="text-white" />
               </button>
             </div>
             <div className="mt-6 p-4 bg-orange-500/10 rounded-2xl border border-orange-500/20">
-              <p className="text-xs text-orange-400 font-semibold italic">
+              <p className="text-xs text-orange-400 font-semibold italic text-center">
                 "The fastest way to the best taste in Addis!"
               </p>
             </div>
@@ -168,11 +164,11 @@ export default function Footer() {
         </div>
 
         {/* BOTTOM SECTION: COPYRIGHT */}
-        <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
+        <div className="pt-8 border-t border-white/10 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
           <p>
             © {currentYear}{" "}
-            <span className="text-gray-300 font-medium">
-              Addis Eats Delivery
+            <span className="text-white dark:text-gray-300 font-medium">
+              ማራኪ Eats Delivery
             </span>
             . All rights reserved.
           </p>

@@ -16,7 +16,7 @@ export default function CheckoutPage() {
   const restaurantId = cart.length > 0 ? cart[0].restaurantId : null;
 
   /* ================= STATES ================= */
-  const [paymentMethod, setPaymentMethod] = useState("BANK");
+  const [paymentMethod, setPaymentMethod] = useState("BANK or TELEBIRR");
   const [shipping, setShipping] = useState(200);
 
   const [firstName, setFirstName] = useState("");
@@ -35,7 +35,7 @@ export default function CheckoutPage() {
   const [message, setMessage] = useState("");
   const token = localStorage.getItem("token");
   const isLoggedIn = !!token;
-  /* ================= TOTALS ================= */
+
   const subtotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [cart],
@@ -108,12 +108,63 @@ export default function CheckoutPage() {
       // ===================================================
       if (isLoggedIn) {
         setShowOtp(false);
+
+        // =========================================
+        // 💳 CHAPA PAYMENT (LOGGED-IN USER)
+        // Skip OTP but go to payment page first
+        // =========================================
+        if (paymentMethod === "CHAPA") {
+
+          const tx_ref = `TX-${Date.now()}`;
+
+          const paymentRes = await axios.post(
+            `${API_URL}/payments/initialize`,
+            {
+              tx_ref,
+              restaurantId,
+
+              items: cart.map((item) => ({
+                menuItemId: item.menuItemId,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+              })),
+
+              totalPrice: total,
+
+              deliveryAddress: {
+                street,
+                city,
+              },
+
+              customer: {
+                email,
+                firstName,
+                lastName,
+                phone,
+              },
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          const checkoutUrl = paymentRes.data.checkout_url;
+
+          window.location.href = checkoutUrl;
+
+          return;
+        }
+
+        // =========================================
+        // 💵 COD / BANK → CREATE ORDER DIRECTLY
+        // =========================================
         const orderRes = await axios.post(
           `${API_URL}/orders`,
           {
             restaurantId,
-            email, // 🔹 send email
-            customerName: { firstName, lastName }, // 🔹 send customer name
+            email,
+            customerName: { firstName, lastName },
             items: cart.map((item) => ({
               menuItemId: item.menuItemId,
               name: item.name,
@@ -131,6 +182,7 @@ export default function CheckoutPage() {
         );
 
         const orderId = orderRes.data.orderId;
+
         clearCart();
         navigate(`/orders/${orderId}`);
         return;
@@ -177,22 +229,44 @@ export default function CheckoutPage() {
       // 2️⃣ CHAPA FLOW (Redirect Only)
       // ====================================================
       if (paymentMethod === "CHAPA") {
+
         const tx_ref = `TX-${Date.now()}`;
 
-        navigate("/payment", {
-          state: {
+        const paymentRes = await axios.post(
+          `${API_URL}/payments/initialize`,
+          {
             tx_ref,
-            email,
-            amount: total,
-            firstName,
-            lastName,
-            phone,
-            cart,
             restaurantId,
-            shipping,
-            address: { street, city },
+
+            items: cart.map((item) => ({
+              menuItemId: item.menuItemId,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+            })),
+
+            totalPrice: total,
+
+            deliveryAddress: {
+              street,
+              city,
+            },
+
+            customer: {
+              email,
+              firstName,
+              lastName,
+              phone,
+            },
           },
-        });
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const checkoutUrl = paymentRes.data.checkout_url;
+
+        window.location.href = checkoutUrl;
 
         return;
       }
@@ -505,14 +579,14 @@ export default function CheckoutPage() {
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="radio"
-                  checked={paymentMethod === "BANK"}
-                  onChange={() => setPaymentMethod("BANK")}
+                  checked={paymentMethod === "BANK or TELEBIRR"}
+                  onChange={() => setPaymentMethod("BANK or TELEBIRR")}
                 />
                 <span className="font-bold text-[#444]">
                   Bank Transfer Or TeleBirr
                 </span>
               </label>
-              {paymentMethod === "BANK" && (
+              {paymentMethod === "BANK or TELEBIRR" && (
                 <div className="bg-[#f2f2f2] p-6 text-[14px] leading-relaxed text-[#555] rounded-sm">
                   Email ላይ በሚላክ የድርጅት አካውንት ቁጥር ወይም በቴሌብር ስልክ ቁጥር መክፈል ይችላሉ። OTP
                   will be sent to your phone to verify the transaction.

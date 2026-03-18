@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Star, Clock, Plus, Heart, MapPin,
-  ShoppingBag, MessageSquare, ThumbsUp, ThumbsDown,
-  Search, Info, X, ChevronRight, Share2,
-  ArrowLeft, Zap, Filter, Utensils, Award,
-  CheckCircle, Flame
+  Star, Clock, Plus, MapPin,
+  ShoppingBag, ThumbsUp, ThumbsDown,
+  Search, Share2, ArrowLeft, Award,
+  ChevronRight, Flame
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
@@ -13,11 +12,6 @@ import axios from "axios";
 
 const API_URL = "http://localhost:5000";
 
-/**
- * RestaurantMenu Component
- * Optimized for high-engagement food delivery.
- * Features: Instant Checkout, Dish-specific Favorites, and Global Search.
- */
 export default function RestaurantMenu() {
   const { id: restaurantId } = useParams();
   const navigate = useNavigate();
@@ -30,7 +24,7 @@ export default function RestaurantMenu() {
   const [menuItems, setMenuItems] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState([]); // Stores both "restaurant" and "dish" types
+  const [favorites, setFavorites] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -46,7 +40,6 @@ export default function RestaurantMenu() {
     const fetchFullSuite = async () => {
       try {
         setLoading(true);
-        // Step A: Fetch Restaurant Profile
         const restRes = await fetch(`${API_URL}/api/restaurants/${restaurantId}`);
         const restData = await restRes.json();
         if (restData.image && !restData.image.startsWith("http")) {
@@ -54,13 +47,11 @@ export default function RestaurantMenu() {
         }
         setRestaurant(restData);
 
-        // Step B: Fetch Categories
         const catRes = await fetch(`${API_URL}/api/categories`);
         const catData = await catRes.json();
         setCategories(catData);
         if (catData.length) setActiveCategory(catData[0]._id);
 
-        // Step C: Fetch Menu Items
         const menuRes = await fetch(`${API_URL}/api/menu-items/restaurant/${restaurantId}`);
         const menuData = await menuRes.json();
         setMenuItems(Array.isArray(menuData) ? menuData.map(item => ({
@@ -68,7 +59,6 @@ export default function RestaurantMenu() {
           image: item.image ? `${API_URL}${item.image}` : "",
         })) : []);
 
-        // Step D: Fetch Reviews
         const revRes = await axios.get(`${API_URL}/api/reviews/restaurant/${restaurantId}`);
         const revData = revRes.data || [];
         setReviews(revData);
@@ -84,12 +74,11 @@ export default function RestaurantMenu() {
         setLoading(false);
       }
     };
-
     fetchFullSuite();
   }, [restaurantId]);
 
   /* =========================================================
-     2. FAVORITES MANAGEMENT (DISH & RESTAURANT)
+     2. FAVORITES MANAGEMENT
      ========================================================= */
   useEffect(() => {
     if (token) fetchFavorites();
@@ -103,11 +92,9 @@ export default function RestaurantMenu() {
       .catch((err) => console.error(err));
   };
 
-  // Check if a specific dish is liked
   const isDishFavorite = (itemId) =>
     favorites.some(f => f.type === "dish" && f.dish?._id === itemId && f.restaurant?._id === restaurantId);
 
-  // Check if the restaurant itself is liked
   const isRestaurantFavorite = () =>
     favorites.some(f => f.type === "restaurant" && f.restaurant?._id === restaurantId);
 
@@ -150,28 +137,22 @@ export default function RestaurantMenu() {
   };
 
   /* =========================================================
-     3. SEARCH & FILTERING LOGIC
+     3. SEARCH & FILTERING
      ========================================================= */
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = item.categoryId?._id === activeCategory;
-
-      // If searching, search across all categories
       if (searchQuery.length > 0) return matchesSearch;
       return matchesCategory;
     });
   }, [menuItems, activeCategory, searchQuery]);
 
-  /* =========================================================
-     4. CART & NAVIGATION
-     ========================================================= */
   const handleAddToCartAndCheckout = (item) => {
     addToCart(item, restaurantId);
-    navigate("/cart"); // Goes straight to the checkout/cart flow
+    navigate("/cart");
   };
 
-  // Header scroll observer
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 80);
     window.addEventListener("scroll", handleScroll);
@@ -179,14 +160,14 @@ export default function RestaurantMenu() {
   }, []);
 
   if (!restaurant) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-slate-950">
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full mb-4" />
-      <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest">Gathering Ingredients...</h2>
+      <h2 className="text-sm font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Gathering Ingredients...</h2>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 pb-32">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 pb-32 transition-colors duration-500">
 
       {/* --- HERO SECTION --- */}
       <section className="relative h-[550px] w-full overflow-hidden">
@@ -196,18 +177,16 @@ export default function RestaurantMenu() {
           className="absolute inset-0 w-full h-full object-cover"
           alt={restaurant.name}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent">
+        <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-slate-950 via-black/20 to-transparent">
           <div className="max-w-[1400px] mx-auto h-full flex flex-col justify-between p-8 md:p-16">
-
             <div className="flex justify-between items-start">
-              <button onClick={() => navigate(-1)} className="p-4 bg-white/20 backdrop-blur-2xl rounded-3xl text-white hover:bg-orange-500 transition-all border border-white/30">
+              <button onClick={() => navigate(-1)} className="p-4 bg-white/20 dark:bg-black/20 backdrop-blur-2xl rounded-3xl text-white hover:bg-orange-500 transition-all border border-white/30">
                 <ArrowLeft size={24} />
               </button>
-              <button className="p-4 bg-white/20 backdrop-blur-2xl rounded-3xl text-white border border-white/30 hover:bg-white/40">
+              <button className="p-4 bg-white/20 dark:bg-black/20 backdrop-blur-2xl rounded-3xl text-white border border-white/30 hover:bg-white/40 dark:hover:bg-white/10">
                 <Share2 size={24} />
               </button>
             </div>
-
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-3">
@@ -220,28 +199,19 @@ export default function RestaurantMenu() {
                     <span className="text-[10px] text-white/60 font-bold uppercase">({totalReviews} Reviews)</span>
                   </div>
                 </div>
-
-                <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none">{restaurant.name}</h1>
-
-                <div className="flex flex-wrap items-center gap-6 text-white/80 font-bold text-xs uppercase tracking-widest">
-                  <span className="flex items-center gap-2"><Clock size={16} className="text-orange-400" /> 20-30 Mins</span>
-                  <span className="flex items-center gap-2"><MapPin size={16} className="text-orange-400" /> {restaurant.location || "Addis Ababa"}</span>
+                <h1 className="text-6xl md:text-8xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{restaurant.name}</h1>
+                <div className="flex flex-wrap items-center gap-6 text-slate-600 dark:text-white/80 font-bold text-xs uppercase tracking-widest">
+                  <span className="flex items-center gap-2"><Clock size={16} className="text-orange-500" /> 20-30 Mins</span>
+                  <span className="flex items-center gap-2"><MapPin size={16} className="text-orange-500" /> {restaurant.location || "Addis Ababa"}</span>
                 </div>
               </div>
-
               <div className="flex items-center gap-4">
                 {!isRestaurantFavorite() ? (
-                  <button
-                    onClick={handleToggleRestaurantFavorite}
-                    className="flex items-center gap-3 bg-white text-black px-10 py-5 rounded-[2.5rem] font-black hover:bg-orange-50 transition-all active:scale-95 shadow-2xl uppercase tracking-widest text-sm"
-                  >
+                  <button onClick={handleToggleRestaurantFavorite} className="flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-black px-10 py-5 rounded-[2.5rem] font-black hover:bg-orange-500 dark:hover:bg-orange-50 transition-all active:scale-95 shadow-2xl uppercase tracking-widest text-sm">
                     <ThumbsUp size={20} /> Like Restaurant
                   </button>
                 ) : (
-                  <button
-                    onClick={handleToggleRestaurantFavorite}
-                    className="flex items-center gap-3 bg-red-500 text-white px-10 py-5 rounded-[2.5rem] font-black hover:bg-red-600 transition-all active:scale-95 shadow-2xl uppercase tracking-widest text-sm"
-                  >
+                  <button onClick={handleToggleRestaurantFavorite} className="flex items-center gap-3 bg-red-500 text-white px-10 py-5 rounded-[2.5rem] font-black hover:bg-red-600 transition-all active:scale-95 shadow-2xl uppercase tracking-widest text-sm">
                     <ThumbsDown size={20} /> Dislike
                   </button>
                 )}
@@ -252,28 +222,26 @@ export default function RestaurantMenu() {
       </section>
 
       {/* --- SEARCH & CATEGORY BAR --- */}
-      <div className={`sticky top-0 z-[100] transition-all duration-300 ${isScrolled ? "bg-white/90 backdrop-blur-2xl py-4 shadow-xl border-b border-gray-100" : "bg-white py-10"}`}>
+      <div className={`sticky top-0 z-[100] transition-all duration-300 ${isScrolled ? "bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl py-4 shadow-xl border-b border-gray-100 dark:border-slate-800" : "bg-white dark:bg-slate-950 py-10"}`}>
         <div className="max-w-[1400px] mx-auto px-6 flex flex-col lg:flex-row gap-8 items-center">
-
           <div className="relative w-full lg:w-[450px]">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
               placeholder="Search dishes or ingredients..."
-              className="w-full bg-gray-50 border-2 border-transparent focus:border-orange-500/20 focus:bg-white rounded-[2rem] py-5 pl-14 pr-6 font-bold text-gray-800 transition-all outline-none"
+              className="w-full bg-gray-50 dark:bg-slate-900 border-2 border-transparent focus:border-orange-500/20 focus:bg-white dark:focus:bg-slate-800 rounded-[2rem] py-5 pl-14 pr-6 font-bold text-gray-800 dark:text-gray-100 transition-all outline-none"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-
           <div className="flex-1 flex items-center gap-3 overflow-x-auto no-scrollbar py-2">
             {categories.map((cat) => (
               <button
                 key={cat._id}
                 onClick={() => { setActiveCategory(cat._id); setSearchQuery(""); }}
                 className={`whitespace-nowrap px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border-2 ${activeCategory === cat._id && searchQuery === ""
-                  ? "bg-gray-900 text-white border-gray-900 shadow-lg shadow-gray-200"
-                  : "bg-transparent text-gray-400 border-gray-50 hover:border-gray-900 hover:text-gray-900"
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-black border-gray-900 dark:border-white shadow-lg shadow-gray-200 dark:shadow-none"
+                  : "bg-transparent text-gray-400 border-gray-100 dark:border-slate-800 hover:border-gray-900 dark:hover:border-white hover:text-gray-900 dark:hover:text-white"
                   }`}
               >
                 {cat.name}
@@ -287,20 +255,20 @@ export default function RestaurantMenu() {
       <main className="max-w-[1400px] mx-auto px-6 mt-16">
         <div className="flex items-center justify-between mb-16">
           <div>
-            <h2 className="text-4xl font-black tracking-tighter text-gray-900 uppercase">
+            <h2 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase">
               {searchQuery ? "Search Results" : "Chef's Specials"}
             </h2>
-            <p className="text-gray-400 font-bold mt-1 text-xs uppercase tracking-[0.2em]">Prepared fresh daily</p>
+            <p className="text-gray-400 dark:text-gray-500 font-bold mt-1 text-xs uppercase tracking-[0.2em]">Prepared fresh daily</p>
           </div>
-          <div className="flex items-center gap-3 bg-orange-50 px-6 py-3 rounded-2xl border border-orange-100">
-            <Flame size={18} className="text-orange-600" />
-            <span className="text-xs font-black text-orange-600 uppercase tracking-widest">{filteredItems.length} Available</span>
+          <div className="flex items-center gap-3 bg-orange-50 dark:bg-orange-500/10 px-6 py-3 rounded-2xl border border-orange-100 dark:border-orange-500/20">
+            <Flame size={18} className="text-orange-600 dark:text-orange-400" />
+            <span className="text-xs font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest">{filteredItems.length} Available</span>
           </div>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-            {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-50 h-[400px] rounded-[3rem] animate-pulse" />)}
+            {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-50 dark:bg-slate-900 h-[400px] rounded-[3rem] animate-pulse" />)}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">
@@ -312,7 +280,7 @@ export default function RestaurantMenu() {
                     layout
                     initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                     key={item._id}
-                    className="group relative flex flex-col bg-white rounded-[3.5rem] border border-gray-50 p-4 hover:shadow-2xl transition-all duration-500"
+                    className="group relative flex flex-col bg-white dark:bg-slate-900 rounded-[3.5rem] border border-gray-50 dark:border-slate-800 p-4 hover:shadow-2xl dark:hover:shadow-orange-500/5 transition-all duration-500"
                   >
                     <div className="relative h-72 w-full overflow-hidden rounded-[2.8rem] mb-6 shadow-xl">
                       <img
@@ -320,41 +288,33 @@ export default function RestaurantMenu() {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         alt={item.name}
                       />
-
-                      {/* ACTION BUTTONS ON IMAGE */}
                       <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                        {/* THE + ICON -> GOES TO CART */}
                         <button
                           onClick={() => handleAddToCartAndCheckout(item)}
-                          className="bg-green-500 text-white p-4 rounded-2xl shadow-2xl hover:bg-gray-900 transition-all active:scale-90"
+                          className="bg-green-500 text-white p-4 rounded-2xl shadow-2xl hover:bg-gray-900 dark:hover:bg-white dark:hover:text-black transition-all active:scale-90"
                         >
                           <Plus size={24} strokeWidth={3} />
                         </button>
-
-                        {/* LIKE/DISLIKE DISH ICON */}
                         <button
                           onClick={() => handleToggleDishFavorite(item)}
-                          className={`p-4 rounded-2xl shadow-2xl transition-all active:scale-90 ${dishLiked ? "bg-red-500 text-white" : "bg-white text-gray-400 hover:text-red-500"}`}
+                          className={`p-4 rounded-2xl shadow-2xl transition-all active:scale-90 ${dishLiked ? "bg-red-500 text-white" : "bg-white/90 dark:bg-slate-800 text-gray-400 hover:text-red-500"}`}
                         >
                           {dishLiked ? <ThumbsDown size={20} /> : <ThumbsUp size={20} />}
                         </button>
                       </div>
-
                       <div className="absolute top-4 left-4">
-                        <span className="bg-white/90 backdrop-blur-xl text-gray-900 text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest shadow-sm">
+                        <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl text-gray-900 dark:text-white text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest shadow-sm">
                           {item.price} ETB
                         </span>
                       </div>
                     </div>
-
                     <div className="px-4 pb-4">
-                      <h3 className="font-black text-gray-900 text-xl leading-tight mb-2 uppercase tracking-tight group-hover:text-orange-600 transition-colors">{item.name}</h3>
-                      <p className="text-sm text-gray-400 font-medium leading-relaxed line-clamp-2 mb-6">
+                      <h3 className="font-black text-gray-900 dark:text-white text-xl leading-tight mb-2 uppercase tracking-tight group-hover:text-orange-600 transition-colors">{item.name}</h3>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 font-medium leading-relaxed line-clamp-2 mb-6">
                         {item.description || "A delicious house specialty made with the finest seasonal ingredients."}
                       </p>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                        <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-slate-800">
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                           <Clock size={12} /> 15m Prep
                         </div>
                         <div className="flex items-center gap-1 text-orange-500">
@@ -372,60 +332,59 @@ export default function RestaurantMenu() {
       </main>
 
       {/* --- REVIEWS SECTION --- */}
-      <section className="max-w-[1400px] mx-auto px-6 mt-40 pt-32 border-t border-gray-100">
+      <section className="max-w-[1400px] mx-auto px-6 mt-40 pt-32 border-t border-gray-100 dark:border-slate-800">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-20">
           <div>
-            <h2 className="text-2xl font-bold tracking-tighter text-gray-700 uppercase">Real Feedbacks from customers</h2>
-            <p className="text-gray-400 mt-2 font-bold text-lg italic tracking-wide">"Simply the best food in town..."</p>
+            <h2 className="text-2xl font-bold tracking-tighter text-gray-700 dark:text-gray-300 uppercase">Real Feedbacks from customers</h2>
+            <p className="text-gray-400 dark:text-gray-500 mt-2 font-bold text-lg italic tracking-wide">"Simply the best food in town..."</p>
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {reviews.map((r) => (
-            <div key={r._id} className="bg-gray-50 p-10 rounded-[3rem] border border-transparent hover:border-orange-200 transition-all group">
+            <div key={r._id} className="bg-gray-50 dark:bg-slate-900 p-10 rounded-[3rem] border border-transparent hover:border-orange-200 dark:hover:border-orange-500/30 transition-all group">
               <div className="flex items-center gap-4 mb-8">
                 <img
                   src={r.userId?.profileImage ? `${API_URL}${r.userId.profileImage}` : "/default-avatar.png"}
-                  className="w-16 h-16 rounded-2xl object-cover ring-4 ring-white shadow-lg"
+                  className="w-16 h-16 rounded-2xl object-cover ring-4 ring-white dark:ring-slate-800 shadow-lg"
                   alt="Reviewer"
                 />
                 <div>
-                  <p className="font-black text-gray-900 text-lg">{r.userId?.fullname || "Verified Guest"}</p>
+                  <p className="font-black text-gray-900 dark:text-white text-lg">{r.userId?.fullname || "Verified Guest"}</p>
                   <div className="flex gap-1 mt-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={14} fill={i < r.rating ? "#f59e0b" : "none"} className={i < r.rating ? "text-yellow-500" : "text-gray-200"} />
+                      <Star key={i} size={14} fill={i < r.rating ? "#f59e0b" : "none"} className={i < r.rating ? "text-yellow-500" : "text-gray-200 dark:text-slate-700"} />
                     ))}
                   </div>
                 </div>
               </div>
-              <p className="text-gray-500 font-medium leading-relaxed italic text-lg">"{r.comment}"</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed italic text-lg">"{r.comment}"</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* --- QUICK ACTION OVERLAY --- */}
-      {/* <AnimatePresence>
+      {/* --- QUICK ACTION OVERLAY (CART) --- */}
+      <AnimatePresence>
         {isScrolled && (
           <motion.div
             initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
             className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[101] w-full max-w-sm px-6"
           >
-            <button
+            {/* <button
               onClick={() => navigate("/cart")}
-              className="w-full bg-gray-900 text-white p-6 rounded-[2.5rem] shadow-3xl flex items-center justify-between hover:scale-105 transition-all group"
+              className="w-full bg-gray-900 dark:bg-white text-white dark:text-black p-6 rounded-[2.5rem] shadow-3xl flex items-center justify-between hover:scale-105 transition-all group"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-white/10 dark:bg-black/10 rounded-2xl flex items-center justify-center">
                   <ShoppingBag size={20} />
                 </div>
                 <span className="font-black uppercase tracking-widest text-xs">Complete Order</span>
               </div>
               <ChevronRight size={20} />
-            </button>
+            </button> */}
           </motion.div>
         )}
-      </AnimatePresence> */}
+      </AnimatePresence>
 
     </div>
   );

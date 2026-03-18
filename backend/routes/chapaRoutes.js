@@ -1,8 +1,8 @@
 import express from "express";
-import { initializeChapa } from "../controllers/chapaController.js";
+import { initiatePayment } from "../controllers/chapaController.js";
 
 const router = express.Router();
 
-router.post("/initialize", initializeChapa);
+router.post("/initialize", initiatePayment);
 
 export default router;

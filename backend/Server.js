@@ -15,6 +15,7 @@ import userRoutes from "./routes/userRoutes.js"
 import customerRoutes from "./routes/customerRoutes.js"
 import notificationRoutes from "./routes/notificationRoutes.js"
 import recommendationRoutes from "./routes/recommendationRoutes.js";
+import questionRoutes from "./routes/questionRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
@@ -54,6 +55,9 @@ app.use("/api/user", userRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/recommendations", recommendationRoutes);
+
+
+app.use("/api", questionRoutes);
 app.get("/", (req, res) => {
   res.send("🚀 API is running...");
 });

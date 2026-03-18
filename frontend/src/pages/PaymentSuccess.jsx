@@ -1,36 +1,47 @@
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+
 export default function PaymentSuccess() {
   const navigate = useNavigate();
-  const { state } = useLocation();
-  const query = new URLSearchParams(useLocation().search);
-  const tx_ref = query.get("tx_ref");
-
+  const location = useLocation();
   useEffect(() => {
-    const confirm = async () => {
-      const res = await axios.post(
-        "http://localhost:5000/api/payments/confirm",
-        {
-          transactionRef: tx_ref,
-          orderData: {
-            restaurantId: state.restaurantId,
-            email: state.email,
-            customerName: `${state.firstName} ${state.lastName}`,
-            items: state.cart.map((item) => ({
-              menuItemId: item.menuItemId,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-            })),
-            totalPrice: state.amount,
-            deliveryAddress: state.address,
-          },
-        },
-      );
+    console.log("PaymentSuccess component mounted");
 
-      navigate(`/orders/${res.data.orderId}`);
+    const query = new URLSearchParams(location.search);
+    const tx_ref = query.get("tx_ref");
+
+    console.log("tx_ref from URL:", tx_ref);
+
+    if (!tx_ref) {
+      console.error("No tx_ref in URL");
+      return;
+    }
+    const confirmPayment = async () => {
+      try {
+        console.log("Sending request to backend...");
+
+        const res = await axios.post(
+          "http://localhost:5000/api/payments/confirm",
+          { transactionRef: tx_ref }
+        );
+
+        console.log("Backend response:", res.data);
+
+        alert("Payment successful!");
+        navigate(`/orders/${res.data.orderId}`);
+      } catch (err) {
+        console.error("Error verifying payment:", err.response?.data || err.message);
+        alert("Payment verification failed");
+      }
     };
 
-    confirm();
-  }, []);
+    confirmPayment();
+  }, [location.search, navigate]);
 
-  return <p>Verifying payment...</p>;
+  return (
+    <div className="h-screen flex items-center justify-center">
+      Verifying payment...
+    </div>
+  );
 }

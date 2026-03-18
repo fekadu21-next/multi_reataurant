@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
+import { startOfWeek, endOfWeek, isWithinInterval, format } from "date-fns";
 import {
-  FiShoppingBag, FiTruck, FiCheckCircle, FiXCircle,
-  FiClock, FiTrash2, FiFilter, FiDollarSign, FiUser,
-  FiMapPin, FiMail, FiPhone, FiCalendar, FiArrowRight
+  FiShoppingBag, FiTruck, FiActivity,
+  FiClock, FiFilter, FiDollarSign,
+  FiMapPin, FiMail, FiPhone, FiCalendar, FiRefreshCw, FiCreditCard
 } from "react-icons/fi";
 
 const API_URL = "http://localhost:5000";
@@ -22,8 +23,9 @@ export default function Orders({ onSeen }) {
   const restaurantId = storedUser?.restaurant?.restaurantId;
 
   /* ================= FETCH LOGIC ================= */
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async (showLoading = false) => {
     if (!restaurantId) return;
+    if (showLoading) setLoading(true);
     try {
       const res = await axios.get(
         `${API_URL}/api/orders/restaurant/${restaurantId}`,
@@ -42,12 +44,12 @@ export default function Orders({ onSeen }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setUnseenCount(unseenRes.data.unseenCount);
-      setLoading(false);
     } catch (err) {
       console.error("Fetch orders failed:", err);
+    } finally {
       setLoading(false);
     }
-  };
+  }, [restaurantId, token]);
 
   /* ================= MARK ORDERS SEEN ================= */
   const markOrdersSeen = async () => {
@@ -67,53 +69,68 @@ export default function Orders({ onSeen }) {
 
   useEffect(() => {
     if (!restaurantId) return;
-
-    const init = async () => {
-      await fetchOrders();
-      const timer = setTimeout(async () => {
-        await markOrdersSeen();
-        if (onSeen) onSeen();
-      }, 5000);
-      return () => clearTimeout(timer);
-    };
-
-    init();
+    fetchOrders(true);
+    const timer = setTimeout(() => {
+      markOrdersSeen();
+      if (onSeen) onSeen();
+    }, 5000);
 
     const socket = io(API_URL, { auth: { token } });
     socket.on("newOrder", (data) => {
-      if (data.restaurantId === restaurantId) {
-        fetchOrders();
+      if (data.restaurantId === restaurantId) fetchOrders();
+    });
+
+    return () => {
+      clearTimeout(timer);
+      socket.disconnect();
+    };
+  }, [restaurantId, fetchOrders]);
+
+  /* ================= REVENUE CALCULATIONS ================= */
+  const stats = useMemo(() => {
+    const start = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const end = endOfWeek(new Date(), { weekStartsOn: 1 });
+
+    let totalNetRevenue = 0;
+    let totalNetCOD = 0;
+    let weeklyNetRevenue = 0;
+    let weeklyNetCOD = 0;
+
+    orders.forEach((o) => {
+      const netAmount = (o.totalPrice || 0) - (o.adminCommission || 0);
+      const createdDate = new Date(o.createdAt);
+      const isThisWeek = isWithinInterval(createdDate, { start, end });
+
+      totalNetRevenue += netAmount;
+      if (o.paymentMethod === "COD") totalNetCOD += netAmount;
+
+      if (isThisWeek) {
+        weeklyNetRevenue += netAmount;
+        if (o.paymentMethod === "COD") weeklyNetCOD += netAmount;
       }
     });
 
-    return () => socket.disconnect();
-  }, [restaurantId]);
+    return {
+      totalNetRevenue,
+      totalNetCOD,
+      weeklyNetRevenue,
+      weeklyNetCOD,
+      range: `${format(start, "MMM dd")} - ${format(end, "MMM dd")}`
+    };
+  }, [orders]);
 
   /* ================= FILTER LOGIC ================= */
   const applyFilters = (payment, recent) => {
     let result = [...orders];
-
     if (payment !== "ALL") {
       result = result.filter((o) => o.paymentStatus === payment);
     }
-
     result.sort((a, b) =>
       recent === "NEWEST"
         ? new Date(b.createdAt) - new Date(a.createdAt)
         : new Date(a.createdAt) - new Date(b.createdAt)
     );
-
     setFilteredOrders(result);
-  };
-
-  const handlePaymentFilter = (status) => {
-    setPaymentFilter(status);
-    applyFilters(status, recentFilter);
-  };
-
-  const handleRecentFilter = (recent) => {
-    setRecentFilter(recent);
-    applyFilters(paymentFilter, recent);
   };
 
   /* ================= UPDATE STATUS ================= */
@@ -123,318 +140,226 @@ export default function Orders({ onSeen }) {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setOrders((prev) =>
-        prev.map((o) => (o._id === id ? { ...o, ...updates } : o))
-      );
-
-      // Update local filtered state immediately for UX
-      setFilteredOrders((prev) =>
-        prev.map((o) => (o._id === id ? { ...o, ...updates } : o))
-      );
+      setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, ...updates } : o)));
+      setFilteredOrders((prev) => prev.map((o) => (o._id === id ? { ...o, ...updates } : o)));
     } catch {
-      alert("Update failed. Please try again.");
+      alert("Status update failed.");
     }
   };
 
-  /* ================= DELETE LOGIC ================= */
-  const deleteOrder = async (id) => {
-    if (!window.confirm("Are you sure you want to permanently delete this order record?")) return;
-
-    try {
-      await axios.delete(`${API_URL}/api/orders/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setOrders((prev) => prev.filter((o) => o._id !== id));
-      setFilteredOrders((prev) => prev.filter((o) => o._id !== id));
-    } catch {
-      alert("Delete failed");
-    }
+  /* ================= STYLING UTILS ================= */
+  const getOrderStatusStyle = (status) => {
+    const styles = {
+      PENDING: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-500 border-amber-200 dark:border-amber-900/50",
+      CANCELLED: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-500 border-red-200 dark:border-red-900/50",
+      DELIVERED: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-900/50",
+      PREPARING: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50",
+      CONFIRMED: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50",
+    };
+    return styles[status] || "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-400 border-gray-200 dark:border-slate-700";
   };
 
-  /* ================= UTIL ================= */
-  const totalRevenue = filteredOrders.reduce(
-    (acc, o) => acc + (o.totalPrice || 0),
-    0
-  );
-
-  const formatDate = (d) =>
-    new Date(d).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-  const getOrderStatusColor = (status) => {
-    switch (status) {
-      case "DELIVERED": return "bg-emerald-50 text-emerald-700 border-emerald-100";
-      case "CANCELLED": return "bg-rose-50 text-rose-700 border-rose-100";
-      case "PREPARING": return "bg-indigo-50 text-indigo-700 border-indigo-100";
-      case "CONFIRMED": return "bg-sky-50 text-sky-700 border-sky-100";
-      default: return "bg-amber-50 text-amber-700 border-amber-100";
-    }
+  const getPaymentStatusStyle = (status) => {
+    const styles = {
+      PAID: "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-900/30",
+      PENDING: "bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-500 border-amber-200 dark:border-amber-900/30",
+      FAILED: "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-500 border-red-200 dark:border-red-900/30",
+    };
+    return styles[status] || "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-500 border-gray-200 dark:border-slate-700";
   };
 
-  const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case "PAID": return "text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded";
-      case "FAILED": return "text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded";
-      default: return "text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded";
-    }
-  };
-
-  /* ================= RENDER ================= */
   return (
-    <div className="max-w-[1600px] mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-700">
+    <div className="max-w-[1600px] mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-700 bg-transparent text-slate-900 dark:text-slate-100">
 
-      {/* HEADER SECTION */}
+      {/* HEADER & TOP STAT CARDS */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-2">
         <div>
-          <h2 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-            Orders Dashboard <span className="text-blue-600">.</span>
+          <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3 transition-colors">
+            Restaurant Hub <span className="text-blue-600">.</span>
           </h2>
-          <p className="text-gray-500 font-medium mt-1">Live order tracking and restaurant revenue management.</p>
+          <p className="text-gray-500 dark:text-slate-400 font-medium mt-1 transition-colors">Live net revenue management (Commission Deducted).</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="bg-white px-6 py-4 rounded-3xl border border-gray-100 shadow-sm text-right">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Calculated Revenue</p>
-            <p className="text-2xl font-black text-emerald-600">{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-xs">ETB</span></p>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-white dark:bg-slate-900 px-6 py-4 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm text-right transition-colors">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Total Net Revenue</p>
+            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-500">
+              {stats.totalNetRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-xs">ETB</span>
+            </p>
           </div>
 
-          {unseenCount > 0 && (
-            <div
-              onClick={markOrdersSeen}
-              className="group relative bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-3xl shadow-xl shadow-blue-200 cursor-pointer transition-all active:scale-95"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
-                  <FiClock size={16} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-blue-100 uppercase">Incoming</p>
-                  <p className="text-lg font-bold">{unseenCount} New Orders</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* FILTER BAR */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-        <div className="space-y-2">
-          <label className="text-[11px] font-black text-gray-400 uppercase ml-1 flex items-center gap-2">
-            <FiFilter /> Payment Status
-          </label>
-          <select
-            value={paymentFilter}
-            onChange={(e) => handlePaymentFilter(e.target.value)}
-            className="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
-          >
-            <option value="ALL">Show All Payments</option>
-            <option value="PENDING">Pending Payments</option>
-            <option value="PAID">Completed Payments</option>
-            <option value="FAILED">Failed Payments</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-[11px] font-black text-gray-400 uppercase ml-1 flex items-center gap-2">
-            <FiCalendar /> Time Sequence
-          </label>
-          <select
-            value={recentFilter}
-            onChange={(e) => handleRecentFilter(e.target.value)}
-            className="w-full bg-gray-50 border-none rounded-2xl py-3 px-4 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
-          >
-            <option value="NEWEST">Latest Orders First</option>
-            <option value="OLDEST">Oldest Records First</option>
-          </select>
-        </div>
-
-        <div className="hidden lg:block lg:col-span-2">
-          <div className="bg-blue-50 rounded-2xl p-4 flex items-center gap-4 border border-blue-100/50">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-              <FiTruck size={20} />
-            </div>
-            <p className="text-xs font-semibold text-blue-800 leading-relaxed">
-              Showing {filteredOrders.length} orders total. Real-time updates are active via secure websocket.
+          <div className="bg-white dark:bg-slate-900 px-6 py-4 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm text-right transition-colors">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Total Net COD</p>
+            <p className="text-2xl font-black text-orange-600 dark:text-orange-500">
+              {stats.totalNetCOD.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-xs">ETB</span>
             </p>
           </div>
         </div>
       </div>
 
+      {/* WEEKLY STAT CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-indigo-600 dark:bg-indigo-700 p-6 rounded-[2rem] text-white shadow-lg transition-colors">
+          <div className="flex justify-between items-center">
+            <FiActivity size={24} />
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Weekly Net Revenue</p>
+          </div>
+          <h2 className="text-3xl font-black mt-4">${stats.weeklyNetRevenue.toFixed(2)}</h2>
+          <p className="text-xs font-medium opacity-70 mt-1">{stats.range}</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 border-2 border-orange-100 dark:border-orange-900/30 p-6 rounded-[2rem] shadow-sm transition-colors">
+          <div className="flex justify-between items-center text-orange-600 dark:text-orange-500">
+            <FiTruck size={24} />
+            <p className="text-[10px] font-black uppercase tracking-widest">Weekly Net COD</p>
+          </div>
+          <h2 className="text-3xl font-black mt-4 text-gray-900 dark:text-white">${stats.weeklyNetCOD.toFixed(2)}</h2>
+          <p className="text-xs font-medium text-gray-400 dark:text-slate-500 mt-1">Cash to collect this week</p>
+        </div>
+      </div>
+
+      {/* FILTER BAR */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-800 shadow-sm transition-colors">
+        <div className="space-y-2">
+          <label className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase ml-1 flex items-center gap-2">
+            <FiFilter /> Payment Filter
+          </label>
+          <select
+            value={paymentFilter}
+            onChange={(e) => { setPaymentFilter(e.target.value); applyFilters(e.target.value, recentFilter); }}
+            className="w-full bg-gray-50 dark:bg-slate-800 border-none rounded-2xl py-3 px-4 text-sm font-bold text-gray-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          >
+            <option value="ALL">All Payments</option>
+            <option value="PAID">Paid Only</option>
+            <option value="PENDING">Pending Only</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase ml-1 flex items-center gap-2">
+            <FiCalendar /> Sort Order
+          </label>
+          <select
+            value={recentFilter}
+            onChange={(e) => { setRecentFilter(e.target.value); applyFilters(paymentFilter, e.target.value); }}
+            className="w-full bg-gray-50 dark:bg-slate-800 border-none rounded-2xl py-3 px-4 text-sm font-bold text-gray-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          >
+            <option value="NEWEST">Latest First</option>
+            <option value="OLDEST">Oldest First</option>
+          </select>
+        </div>
+        <div className="lg:col-span-2 text-right">
+          <button onClick={() => fetchOrders(true)} className="p-4 bg-gray-900 dark:bg-slate-800 text-white dark:text-blue-400 rounded-2xl hover:bg-black dark:hover:bg-slate-700 transition-all shadow-lg">
+            <FiRefreshCw className={loading ? "animate-spin" : ""} />
+          </button>
+        </div>
+      </div>
+
       {/* TABLE SECTION */}
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-gray-50/50">
-                <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-left">Customer Profile</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-left">Contact Info</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-left">Order Details</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Amount</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Workflow Status</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Activity Date</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Actions</th>
+              <tr className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800 transition-colors">
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">Customer Profile</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">Destination</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">Order Items</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">Method</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center">Workflow</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-right">Net Earnings</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50">
               {loading ? (
-                <tr>
-                  <td colSpan="7" className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Loading orders...</p>
+                <tr><td colSpan="6" className="py-20 text-center text-gray-400 dark:text-slate-600 font-bold uppercase tracking-widest text-xs">Synchronizing Data...</td></tr>
+              ) : filteredOrders.map((o) => (
+                <tr key={o._id} className={`group hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors ${o.isSeen === false ? "bg-blue-50/30 dark:bg-blue-900/10" : ""}`}>
+
+                  {/* Profile with Email & Phone */}
+                  <td className="p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center font-bold text-gray-500 dark:text-slate-400 shadow-sm transition-colors">
+                        {o.customerName?.firstName?.charAt(0) || "G"}
+                      </div>
+                      <div>
+                        <p className="font-black text-gray-900 dark:text-slate-100 text-sm transition-colors">
+                          {o.customerName?.firstName} {o.customerName?.lastName}
+                        </p>
+                        <div className="flex flex-col gap-0.5 mt-1">
+                          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 flex items-center gap-1"><FiPhone size={10} /> {o.customerPhone}</p>
+                          <p className="text-[10px] font-bold text-blue-500/70 dark:text-blue-400/70 flex items-center gap-1 lowercase tracking-tight"><FiMail size={10} /> {o.customerEmail}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Destination */}
+                  <td className="p-6">
+                    <div className="flex items-start gap-2 text-xs">
+                      <FiMapPin className="mt-0.5 text-gray-400 dark:text-slate-500 shrink-0" />
+                      <div>
+                        <p className="font-medium text-gray-700 dark:text-slate-300 transition-colors">{o.deliveryAddress?.street || "Pickup Order"}</p>
+                        <p className="font-black text-indigo-500 dark:text-indigo-400 uppercase text-[9px] mt-1 tracking-wider transition-colors">{o.deliveryAddress?.city}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Order Items */}
+                  <td className="p-6">
+                    <p className="text-xs font-semibold text-gray-800 dark:text-slate-200 line-clamp-1 transition-colors">
+                      {o.items?.map((i) => `${i.name} x${i.quantity}`).join(", ")}
+                    </p>
+                    <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 mt-1 uppercase tracking-tighter transition-colors">
+                      Ordered: {format(new Date(o.createdAt), "MMM dd, HH:mm")}
+                    </p>
+                  </td>
+
+                  {/* Payment Method Column */}
+                  <td className="p-6">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-lg text-gray-400 dark:text-slate-500 transition-colors">
+                        <FiCreditCard size={14} />
+                      </div>
+                      <span className="text-[10px] font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest transition-colors">{o.paymentMethod}</span>
+                    </div>
+                  </td>
+
+                  {/* Workflow / Status */}
+                  <td className="p-6 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <select
+                        value={o.orderStatus}
+                        onChange={(e) => updateOrder(o._id, { orderStatus: e.target.value })}
+                        className={`px-3 py-1.5 rounded-full text-[9px] font-black border uppercase outline-none cursor-pointer transition-all shadow-sm bg-transparent dark:bg-slate-900 ${getOrderStatusStyle(o.orderStatus)}`}
+                      >
+                        <option value="PENDING" className="dark:bg-slate-900">PENDING</option>
+                        <option value="CONFIRMED" className="dark:bg-slate-900">CONFIRMED</option>
+                        <option value="PREPARING" className="dark:bg-slate-900">PREPARING</option>
+                        <option value="DELIVERED" className="dark:bg-slate-900">DELIVERED</option>
+                        <option value="CANCELLED" className="dark:bg-slate-900">CANCELLED</option>
+                      </select>
+                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold border uppercase tracking-tighter transition-colors ${getPaymentStatusStyle(o.paymentStatus)}`}>
+                        Payment: {o.paymentStatus}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Net Earnings with Commission Breakdown */}
+                  <td className="p-6 text-right">
+                    <div className="inline-block text-right">
+                      <div className="font-black text-emerald-600 dark:text-emerald-500 text-sm tracking-tight transition-colors">
+                        ETB {((o.totalPrice || 0) - (o.adminCommission || 0)).toFixed(2)}
+                      </div>
+                      <div className="flex flex-col mt-1">
+                        <span className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase transition-colors">Gross: {o.totalPrice?.toFixed(2)}</span>
+                        <span className="text-[9px] font-bold text-rose-400 dark:text-rose-500/80 uppercase transition-colors">Comm: -{o.adminCommission?.toFixed(2)}</span>
+                      </div>
                     </div>
                   </td>
                 </tr>
-              ) : filteredOrders.map((o) => {
-                const name = o.customerName
-                  ? `${o.customerName.firstName} ${o.customerName.lastName}`
-                  : "Guest Patron";
-                const itemsList = o.items
-                  .map((i) => `${i.name} (x${i.quantity})`)
-                  .join(", ");
-
-                return (
-                  <tr
-                    key={o._id}
-                    className={`group transition-all hover:bg-gray-50/50 ${o.isSeen === false ? "bg-blue-50/30" : ""}`}
-                  >
-                    {/* CUSTOMER PROFILE */}
-                    <td className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-500 font-bold group-hover:scale-110 transition-transform">
-                          {name.charAt(0)}
-                        </div>
-                        <div className="max-w-[150px]">
-                          <p className="font-black text-gray-900 text-sm truncate">{name}</p>
-                          <p className="text-[10px] font-bold text-gray-400 flex items-center gap-1 uppercase tracking-tighter">
-                            <FiMapPin size={10} /> {o.deliveryAddress?.street || "Pickup"}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* CONTACT INFO */}
-                    <td className="p-6">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium flex items-center gap-2">
-                          <FiMail className="text-gray-300" /> {o.customerEmail || "N/A"}
-                        </p>
-                        <p className="text-xs text-gray-600 font-medium flex items-center gap-2">
-                          <FiPhone className="text-gray-300" /> {o.customerPhone || "N/A"}
-                        </p>
-                      </div>
-                    </td>
-
-                    {/* ORDER DETAILS */}
-                    <td className="p-6">
-                      <div className="max-w-[200px]">
-                        <p className="text-sm font-semibold text-gray-800 line-clamp-1">{itemsList}</p>
-                        <p className="text-[10px] font-bold text-blue-500 mt-1 uppercase tracking-widest">{o.paymentMethod}</p>
-                      </div>
-                    </td>
-
-                    {/* PRICE */}
-                    <td className="p-6 text-center">
-                      <div className="inline-block px-3 py-1 bg-gray-50 rounded-lg">
-                        <p className="text-sm font-black text-gray-900">
-                          {Number(o.totalPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">ETB</p>
-                      </div>
-                    </td>
-
-                    {/* WORKFLOW STATUS */}
-                    <td className="p-6">
-                      <div className="flex flex-col items-center gap-2">
-                        {/* Order Progress */}
-                        <select
-                          value={o.orderStatus}
-                          onChange={(e) => updateOrder(o._id, { orderStatus: e.target.value })}
-                          className={`w-32 text-[10px] font-black uppercase rounded-full border px-3 py-1.5 focus:ring-0 cursor-pointer text-center outline-none transition-all ${getOrderStatusColor(o.orderStatus)}`}
-                        >
-                          <option>PENDING</option>
-                          <option>CONFIRMED</option>
-                          <option>PREPARING</option>
-                          <option>DELIVERED</option>
-                          <option>CANCELLED</option>
-                        </select>
-
-                        {/* Payment Status Indicator */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Payment:</span>
-                          <select
-                            value={o.paymentStatus}
-                            onChange={(e) => updateOrder(o._id, { paymentStatus: e.target.value })}
-                            className={`text-[9px] font-black uppercase bg-transparent border-none focus:ring-0 p-0 cursor-pointer ${getPaymentStatusColor(o.paymentStatus)}`}
-                          >
-                            <option>PENDING</option>
-                            <option>PAID</option>
-                            <option>FAILED</option>
-                          </select>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* DATE */}
-                    <td className="p-6 text-right">
-                      <p className="text-[11px] font-bold text-gray-800">{formatDate(o.createdAt)}</p>
-                      <p className="text-[9px] font-bold text-gray-400 uppercase mt-1">Confirmed</p>
-                    </td>
-
-                    {/* ACTION */}
-                    <td className="p-6 text-center">
-                      <button
-                        onClick={() => deleteOrder(o._id)}
-                        className="p-3 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all active:scale-90"
-                        title="Archive Order"
-                      >
-                        <FiTrash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              ))}
             </tbody>
           </table>
-        </div>
-
-        {/* EMPTY STATE */}
-        {!loading && filteredOrders.length === 0 && (
-          <div className="py-24 text-center">
-            <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-4 text-gray-200">
-              <FiShoppingBag size={40} />
-            </div>
-            <h3 className="text-xl font-black text-gray-900">Quiet in the kitchen?</h3>
-            <p className="text-gray-400 text-sm mt-1">No orders match your current filter settings.</p>
-            <button
-              onClick={() => { setPaymentFilter("ALL"); setRecentFilter("NEWEST"); applyFilters("ALL", "NEWEST"); }}
-              className="mt-6 text-blue-600 font-bold text-sm hover:underline"
-            >
-              Reset All Filters
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* FOOTER STATS INFO */}
-      <div className="flex flex-col md:flex-row justify-between items-center text-gray-400 px-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em]">Secure Encryption Active • Restaurant Portal v2.0</p>
-        <div className="flex items-center gap-6 mt-4 md:mt-0">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-            <span className="text-[10px] font-bold uppercase">System Online</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-            <span className="text-[10px] font-bold uppercase">Socket Sync</span>
-          </div>
         </div>
       </div>
     </div>

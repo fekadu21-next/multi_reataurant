@@ -15,7 +15,6 @@ export default function PaymentPage() {
       </div>
     );
   }
-
   const { orderId, email, amount, customerName, phone } = state;
 
   return (
