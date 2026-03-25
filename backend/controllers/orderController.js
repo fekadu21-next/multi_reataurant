@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import { onlineOwners, onlineAdmins } from "../Server.js";
 import { createReviewNotification } from "./notificationController.js";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
+import bcrypt from "bcryptjs";
 const otpStore = new Map();
 // ✉️ Send OTP email
 export const sendOtp = async (req, res) => {
@@ -68,6 +69,9 @@ export const createOrder = async (req, res) => {
       instructions,
       email,
       customerName,
+      createAccount,
+      password,
+      phone,
     } = req.body;
 
     if (!items || items.length === 0) {
@@ -130,7 +134,43 @@ export const createOrder = async (req, res) => {
 
       finalEmail = email;
       finalCustomerName = customerName;
-      customerPhone = otpRecord.phone || "Not Provided";
+      customerPhone = otpRecord.phone || phone || "Not Provided";
+
+      // ============================================
+      // 🆕 CREATE USER IF REQUESTED
+      // ============================================
+      if (createAccount) {
+
+        if (!password) {
+          return res.status(400).json({
+            message: "Password is required to create account",
+          });
+        }
+
+        // Check if user already exists
+        let existingUser = await User.findOne({ email });
+
+        if (!existingUser) {
+          const hashedPassword = await bcrypt.hash(password, 10);
+
+          const newUser = await User.create({
+            fullname: `${customerName.firstName} ${customerName.lastName}`,
+            email,
+            password: hashedPassword,
+
+            address: {
+              street: deliveryAddress?.street || "",
+              city: deliveryAddress?.city || "",
+              phone: customerPhone,
+            },
+          });
+
+          customerId = newUser._id;
+        } else {
+          // If already exists → just link order
+          customerId = existingUser._id;
+        }
+      }
 
       otpStore.delete(email);
     }

@@ -92,7 +92,11 @@ export default function CheckoutPage() {
       setMessage(t("restaurantNotSelected"));
       return;
     }
-
+    if (createAccount && !password) {
+      setMessage("Password is required to create account");
+      setLoading(false);
+      return;
+    }
     if (cart.length === 0) {
       setMessage(t("cartEmpty"));
       return;
@@ -209,6 +213,7 @@ export default function CheckoutPage() {
   /* ================= VERIFY OTP ================= */
   const handleVerifyOtp = async (otp) => {
     if (isLoggedIn) return;
+
     setLoading(true);
     setMessage("");
 
@@ -229,7 +234,6 @@ export default function CheckoutPage() {
       // 2️⃣ CHAPA FLOW (Redirect Only)
       // ====================================================
       if (paymentMethod === "CHAPA") {
-
         const tx_ref = `TX-${Date.now()}`;
 
         const paymentRes = await axios.post(
@@ -258,14 +262,17 @@ export default function CheckoutPage() {
               lastName,
               phone,
             },
+
+            // ✅ NEW (for backend user creation if needed)
+            createAccount,
+            password,
           },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          token
+            ? { headers: { Authorization: `Bearer ${token}` } }
+            : {}
         );
 
         const checkoutUrl = paymentRes.data.checkout_url;
-
         window.location.href = checkoutUrl;
 
         return;
@@ -280,19 +287,25 @@ export default function CheckoutPage() {
           restaurantId,
           email,
           customerName: { firstName, lastName },
+
           items: cart.map((item) => ({
             menuItemId: item.menuItemId,
             name: item.name,
             price: item.price,
             quantity: item.quantity,
           })),
+
           totalPrice: total,
           paymentMethod,
-          paymentReference: "",
+
           deliveryAddress: { street, city },
           instructions: "",
+
+          // ✅ NEW (IMPORTANT)
+          createAccount,
+          password,
+          phone,
         },
-        // ✅ If token exists (edge case), send it
         token
           ? { headers: { Authorization: `Bearer ${token}` } }
           : {}
@@ -300,7 +313,10 @@ export default function CheckoutPage() {
 
       const orderId = orderRes.data.orderId;
 
+      // ✅ CLEANUP
       clearCart();
+      setPassword(""); // optional cleanup
+
       navigate(`/orders/${orderId}`);
 
     } catch (err) {
