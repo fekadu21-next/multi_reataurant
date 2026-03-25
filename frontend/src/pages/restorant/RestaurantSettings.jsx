@@ -19,7 +19,7 @@ import {
   Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { useTranslation } from "react-i18next";
 /**
  * RESTAURANT SETTINGS COMPONENT
  * Features: High-end UI, Image Preview, Bento-box layout, 
@@ -30,6 +30,7 @@ const API_URL = "http://localhost:5000/api";
 
 export default function RestaurantSettings() {
   // --- AUTH & CONTEXT LOGIC ---
+  const { t } = useTranslation();
   const token = localStorage.getItem("token");
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const restaurantId = storedUser?.restaurant?.restaurantId;
@@ -55,7 +56,7 @@ export default function RestaurantSettings() {
   useEffect(() => {
     const fetchRestaurantData = async () => {
       if (!restaurantId) {
-        showStatus("error", "No Restaurant ID found in session.");
+        showStatus("error", t("settingss.errors.noId"));
         setLoading(false);
         return;
       }
@@ -81,7 +82,8 @@ export default function RestaurantSettings() {
         setLoading(false);
       } catch (err) {
         console.error("Fetch Error:", err);
-        showStatus("error", "Could not retrieve restaurant configuration.");
+        showStatus("error", t("settingss.errors.fetch")
+        );
         setLoading(false);
       }
     };
@@ -109,7 +111,7 @@ export default function RestaurantSettings() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showStatus("error", "Please select a valid image file.");
+      showStatus("error", t("settings.errors.invalidImage"));
       return;
     }
 
@@ -148,11 +150,11 @@ export default function RestaurantSettings() {
       );
 
       if (response.status === 200) {
-        showStatus("success", "Restaurant profile synchronized successfully.");
+        showStatus("success", t("settingss.success.update"));
       }
     } catch (err) {
       console.error("Update Error:", err);
-      showStatus("error", "Update failed. Please check your network.");
+      showStatus("error", t("settingss.errors.update"));
     } finally {
       setIsSaving(false);
     }
@@ -169,7 +171,7 @@ export default function RestaurantSettings() {
         >
           <Loader2 className="w-10 h-10 text-yellow-500" />
         </motion.div>
-        <h2 className="mt-6 font-bold text-gray-400 dark:text-slate-600 tracking-widest uppercase text-xs">Initializing Dashboard</h2>
+        <h2 className="mt-6 font-bold text-gray-400 dark:text-slate-600 tracking-widest uppercase text-xs">{t("settingss.loading")}</h2>
       </div>
     );
   }
@@ -185,7 +187,7 @@ export default function RestaurantSettings() {
             <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center">
               <Settings2 size={16} className="text-white dark:text-black" />
             </div>
-            <span className="font-black text-sm tracking-tighter uppercase dark:text-white">Kitchen Control Panel</span>
+            <span className="font-black text-sm tracking-tighter uppercase dark:text-white">{t("settingss.panel")}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="h-8 w-px bg-gray-200 dark:bg-slate-800 hidden md:block"></div>
@@ -202,10 +204,9 @@ export default function RestaurantSettings() {
         {/* 2. HEADER AREA */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <header>
-            <h1 className="text-5xl font-black tracking-tight text-gray-900 dark:text-white transition-colors">Settings</h1>
-            <p className="text-gray-500 dark:text-slate-400 text-lg mt-2">Fine-tune how your restaurant appears to thousands of customers.</p>
+            <h1 className="text-5xl font-black tracking-tight text-gray-900 dark:text-white transition-colors">{t("settingss.title")}</h1>
+            <p className="text-gray-500 dark:text-slate-400 text-lg mt-2">{t("settingss.subtitle")}.</p>
           </header>
-
           <AnimatePresence>
             {status.type && (
               <motion.div
@@ -233,7 +234,7 @@ export default function RestaurantSettings() {
             {/* BRAND IMAGE SECTION */}
             <section className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-sm border border-gray-100 dark:border-slate-800 transition-colors overflow-hidden relative">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Store Brand</h3>
+                <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">{t("settingss.brand")}</h3>
                 <div className="p-2 bg-gray-50 dark:bg-slate-800 rounded-xl text-gray-400"><ImageIcon size={14} /></div>
               </div>
 
@@ -246,11 +247,11 @@ export default function RestaurantSettings() {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="p-4 bg-white dark:bg-slate-900 rounded-full shadow-sm mb-4"><Camera className="text-gray-300 dark:text-slate-600" /></div>
-                    <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center px-4">Tap to upload high-res cover</span>
+                    <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center px-4">{t("settingss.upload")}</span>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                  <div className="px-4 py-2 bg-white dark:bg-slate-900 dark:text-white rounded-full text-xs font-black uppercase tracking-tighter">Replace Photo</div>
+                  <div className="px-4 py-2 bg-white dark:bg-slate-900 dark:text-white rounded-full text-xs font-black uppercase tracking-tighter">{t("settingss.upload")}</div>
                 </div>
               </div>
 
@@ -266,7 +267,7 @@ export default function RestaurantSettings() {
                 <div className="flex gap-3">
                   <Info className="text-yellow-600 dark:text-yellow-500 flex-shrink-0" size={16} />
                   <p className="text-[11px] text-yellow-800/70 dark:text-yellow-500/70 font-medium leading-relaxed">
-                    First impressions matter. Use a bright, high-quality photo of your best dish or your restaurant front.
+                    {t("settingss.tip")}.
                   </p>
                 </div>
               </div>
@@ -278,19 +279,19 @@ export default function RestaurantSettings() {
                 <Store size={100} />
               </div>
               <div className="relative z-10">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-600 mb-8">Marketplace Preview</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-600 mb-8">{t("settingss.preview")}</h3>
                 <div className="space-y-6">
                   <div>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Entity Name</p>
-                    <p className="text-2xl font-black truncate">{formData.name || "Set Name"}</p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase mb-1">{t("settingss.preview")}</p>
+                    <p className="text-2xl font-black truncate">{formData.name || t("settingss.setName")}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Fee</p>
+                      <p className="text-slate-500 text-[10px] font-bold uppercase mb-1">{t("settingss.fee")}</p>
                       <p className="text-xl font-black text-yellow-400">Br {formData.deliveryFee || "0"}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500 text-[10px] font-bold uppercase mb-1">Region</p>
+                      <p className="text-slate-500 text-[10px] font-bold uppercase mb-1">{t("settingss.region")}</p>
                       <p className="text-xl font-black">{formData.city || "N/A"}</p>
                     </div>
                   </div>
@@ -309,16 +310,17 @@ export default function RestaurantSettings() {
                   <FileText size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black tracking-tight dark:text-white">Core Identity</h2>
-                  <p className="text-xs text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest">General storefront details</p>
+                  <h2 className="text-xl font-black tracking-tight dark:text-white">{t("settingss.region")}</h2>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 font-bold uppercase tracking-widest">{t("settingss.coreSub")}</p>
                 </div>
               </div>
 
               <div className="grid gap-8">
                 <div className="space-y-2 group">
                   <div className="flex items-center justify-between px-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 group-focus-within:text-yellow-500 transition-colors">Restaurant Name</label>
-                    <span className="text-[9px] text-gray-300 dark:text-slate-600 font-bold italic">Required</span>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 group-focus-within:text-yellow-500 transition-colors">{t("settingss.name")}
+                    </label>
+                    <span className="text-[9px] text-gray-300 dark:text-slate-600 font-bold italic">{t("settingss.required")}</span>
                   </div>
                   <input
                     type="text"
@@ -326,20 +328,20 @@ export default function RestaurantSettings() {
                     value={formData.name}
                     onChange={handleInputChange}
                     className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-50 dark:border-slate-800 rounded-2xl px-6 py-4 outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-yellow-400/5 focus:border-yellow-400 transition-all font-bold text-lg dark:text-white"
-                    placeholder="Enter restaurant name..."
+                    placeholder={t("settingss.namePlaceholder")}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 px-1">About our Kitchen</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 px-1">{t("settingss.about")}</label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
                     rows="4"
                     className="w-full bg-gray-50 dark:bg-slate-800/50 border border-gray-50 dark:border-slate-800 rounded-[2rem] px-6 py-5 outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-yellow-400 transition-all text-gray-700 dark:text-slate-300 leading-relaxed font-medium"
-                    placeholder="Brief description for your customers..."
+                    placeholder={t("settingss.descPlaceholder")}
                   />
                 </div>
               </div>
@@ -350,14 +352,14 @@ export default function RestaurantSettings() {
               <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-sm border border-gray-100 dark:border-slate-800 transition-colors group">
                 <div className="flex items-center gap-3 mb-6">
                   <Tag size={18} className="text-yellow-500" />
-                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-500">Search Categories</h3>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-500">{t("settingss.categories")}</h3>
                 </div>
                 <input
                   type="text"
                   name="categories"
                   value={formData.categories}
                   onChange={handleInputChange}
-                  placeholder="Pizza, Burger, Tradition..."
+                  placeholder={t("settingss.categories")}
                   className="w-full bg-transparent border-b-2 border-gray-100 dark:border-slate-800 py-3 text-gray-800 dark:text-slate-200 font-bold outline-none focus:border-yellow-400 transition-all placeholder:text-gray-200 dark:placeholder:text-slate-700"
                 />
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -372,7 +374,7 @@ export default function RestaurantSettings() {
               <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-sm border border-gray-100 dark:border-slate-800 transition-colors">
                 <div className="flex items-center gap-3 mb-6">
                   <Truck size={18} className="text-yellow-500" />
-                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-500">Delivery Logic</h3>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-500">{t("settingss.categoriesPlaceholder")}</h3>
                 </div>
                 <div className="flex items-end gap-3">
                   <span className="text-3xl font-black text-gray-200 dark:text-slate-800 mb-1 transition-colors">Br</span>
@@ -385,7 +387,7 @@ export default function RestaurantSettings() {
                     placeholder="0"
                   />
                 </div>
-                <p className="text-[9px] text-gray-300 dark:text-slate-600 font-bold uppercase mt-4 transition-colors">Standard ETB per delivery</p>
+                <p className="text-[9px] text-gray-300 dark:text-slate-600 font-bold uppercase mt-4 transition-colors">{t("settingss.deliveryNote")}</p>
               </div>
             </div>
 
@@ -393,11 +395,11 @@ export default function RestaurantSettings() {
             <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-10 shadow-sm border border-gray-100 dark:border-slate-800 transition-colors">
               <div className="flex items-center gap-3 mb-10">
                 <MapPin size={20} className="text-red-500" />
-                <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-500">Physical Location</h3>
+                <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-slate-500">{t("settingss.deliveryNote")}</h3>
               </div>
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 px-1">Street Address</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 px-1">{t("settingss.location")}</label>
                   <input
                     type="text"
                     name="street"
@@ -407,7 +409,7 @@ export default function RestaurantSettings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 px-1">City / Region</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 px-1">{t("settingss.street")}</label>
                   <input
                     type="text"
                     name="city"
@@ -423,7 +425,7 @@ export default function RestaurantSettings() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-6">
               <div className="flex items-center gap-2 text-gray-400 dark:text-slate-500 font-bold text-xs bg-gray-100/50 dark:bg-slate-900/50 px-6 py-3 rounded-full transition-colors">
                 <Globe size={14} />
-                Global storefront sync is active
+                {t("settingss.city")}
               </div>
 
               <div className="flex items-center gap-4 w-full md:w-auto">
@@ -432,7 +434,7 @@ export default function RestaurantSettings() {
                   onClick={() => window.location.reload()}
                   className="w-1/3 md:w-auto px-10 py-5 rounded-2xl text-xs font-black uppercase tracking-widest text-gray-400 dark:text-slate-600 hover:bg-gray-50 dark:hover:bg-slate-900 transition-all"
                 >
-                  Reset
+                  {t("settingss.sync")}
                 </button>
                 <button
                   type="submit"
@@ -444,7 +446,7 @@ export default function RestaurantSettings() {
                   ) : (
                     <div className="flex items-center gap-2">
                       <Save size={18} />
-                      Save Configuration
+                      {t("settingss.reset")}
                     </div>
                   )}
                 </button>
@@ -461,8 +463,8 @@ export default function RestaurantSettings() {
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-600">Merchant Dashboard v4.2</span>
           </div>
           <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest">
-            <a href="#" className="hover:text-black dark:hover:text-white">Terms of Service</a>
-            <a href="#" className="hover:text-black dark:hover:text-white">Privacy Protocol</a>
+            <a href="#" className="hover:text-black dark:hover:text-white">{t("settingss.save")}</a>
+            <a href="#" className="hover:text-black dark:hover:text-white">{t("settingss.terms")}</a>
           </div>
         </footer>
 

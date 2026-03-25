@@ -103,3 +103,53 @@ export const checkReviewStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+export const getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .populate({
+        path: "userId",
+        select: "fullname profileImage",
+      })
+      .populate({
+        path: "restaurantId",
+        select: "name",
+      })
+      .sort({ createdAt: -1 });
+
+    res.json(reviews);
+  } catch (error) {
+    console.error("Error fetching all reviews:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+export const deleteReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    await Review.findByIdAndDelete(reviewId);
+
+    // Recalculate restaurant rating
+    if (review.restaurantId) {
+      const reviews = await Review.find({ restaurantId: review.restaurantId });
+      const avgRating =
+        reviews.length > 0
+          ? reviews.reduce((acc, item) => acc + item.rating, 0) / reviews.length
+          : 0;
+
+      await Restaurant.findByIdAndUpdate(review.restaurantId, {
+        rating: avgRating,
+        totalReviews: reviews.length,
+      });
+    }
+
+    res.json({ message: "Review deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting review:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -1,342 +1,386 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import axios from "axios";
 import {
-  FiDollarSign,
-  FiPieChart,
-  FiTruck,
-  FiCreditCard,
-  FiFilter,
-  FiDownload,
-  FiSearch,
-  FiCheckCircle,
-  FiClock,
-  FiCalendar,
-  FiTrendingUp,
-  FiActivity,
-  FiUser
-} from "react-icons/fi";
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell,
+} from "recharts";
+import {
+  DollarSign, Wallet, Building2, Landmark,
+  Calendar, ChevronDown, Download, RefreshCcw,
+  ArrowUpRight, PieChart as PieIcon, Percent, ShieldCheck
+} from "lucide-react";
+import { motion } from "framer-motion";
 
-/**
- * ENUM TYPES:
- * Payment Methods: ["BANK or TELEBIRR", "CHAPA", "COD"]
- * Time Filters: ["All Time", "Today", "Weekly"]
- */
+const API_BASE_URL = "http://localhost:5000";
 
-const DUMMY_PAYMENTS = [
-  {
-    _id: "TXN-9901",
-    orderId: "ORD-7701",
-    restaurant: "Skyline Burger",
-    customer: "Abebe Kebede",
-    amount: 1250,
-    paymentMethod: "BANK or TELEBIRR",
-    status: "Settled",
-    date: new Date().toISOString(),
-    commissionRate: 0.1,
-  },
-  {
-    _id: "TXN-9902",
-    orderId: "ORD-7702",
-    restaurant: "Pizza Hut",
-    customer: "Sara Tekle",
-    amount: 850,
-    paymentMethod: "COD",
-    status: "Pending Collection",
-    date: new Date().toISOString(),
-    commissionRate: 0.12,
-  },
-  {
-    _id: "TXN-9903",
-    orderId: "ORD-7703",
-    restaurant: "Habesha Kitchen",
-    customer: "Dawit Isaac",
-    amount: 3200,
-    paymentMethod: "CHAPA",
-    status: "Settled",
-    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    commissionRate: 0.1,
-  },
-  {
-    _id: "TXN-9904",
-    orderId: "ORD-7704",
-    restaurant: "Skyline Burger",
-    customer: "Muna Ahmed",
-    amount: 450,
-    paymentMethod: "BANK or TELEBIRR",
-    status: "Settled",
-    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    commissionRate: 0.1,
-  },
-  {
-    _id: "TXN-9905",
-    orderId: "ORD-7705",
-    restaurant: "Burger King",
-    customer: "Samuel L.",
-    amount: 1100,
-    paymentMethod: "COD",
-    status: "Collected",
-    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    commissionRate: 0.15,
-  },
-  {
-    _id: "TXN-9906",
-    orderId: "ORD-7706",
-    restaurant: "Lucy Hotel",
-    customer: "Helen G.",
-    amount: 5400,
-    paymentMethod: "CHAPA",
-    status: "Settled",
-    date: new Date().toISOString(),
-    commissionRate: 0.08,
-  }
-];
+/* ================= COMPONENT ================= */
 
-export default function Payments() {
-  const [payments] = useState(DUMMY_PAYMENTS);
-  const [search, setSearch] = useState("");
-  const [methodFilter, setMethodFilter] = useState("All");
-  const [timeFilter, setTimeFilter] = useState("All Time");
-  const [restaurantFilter, setRestaurantFilter] = useState("All Restaurants");
+export default function PaymentAnalytics() {
+  const [orders, setOrders] = useState([]);
+  const [restaurants, setRestaurants] = useState([]);
+  const [selectedRestaurant, setSelectedRestaurant] = useState("ALL");
+  const [timeRange, setTimeRange] = useState("Last 7 Days");
+  const [loading, setLoading] = useState(true);
 
-  // Generate dynamic list of restaurants from data
-  const restaurantOptions = useMemo(() => {
-    const names = payments.map(p => p.restaurant);
-    return ["All Restaurants", ...new Set(names)];
-  }, [payments]);
+  /* ================= DATA FETCHING ================= */
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
 
-  // --- Multi-Layer Filtering Logic ---
+        // Fetch Orders (Admin endpoint or Restaurant specific)
+        const endpoint =
+          selectedRestaurant === "ALL"
+            ? `${API_BASE_URL}/api/orders`
+            : `${API_BASE_URL}/api/orders/restaurant/${selectedRestaurant}`;
+        const ordersRes = await axios.get(endpoint, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // Fetch Restaurants for filter
+        const resList = await axios.get(`${API_BASE_URL}/api/restaurants`);
+
+        setOrders(ordersRes.data || []);
+        setRestaurants(resList.data || []);
+      } catch (err) {
+        console.error("Payment Fetch Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [selectedRestaurant]);
+
+  /* ================= ADVANCED FILTERING LOGIC ================= */
   const filteredData = useMemo(() => {
-    return payments.filter((p) => {
-      const pDate = new Date(p.date);
-      const now = new Date();
+    const now = new Date();
 
-      // 1. Time Filter
-      let matchesTime = true;
-      if (timeFilter === "Today") {
-        matchesTime = pDate.toDateString() === now.toDateString();
-      } else if (timeFilter === "Weekly") {
-        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        matchesTime = pDate >= oneWeekAgo;
+    return orders
+      .filter(order => {
+        const date = new Date(order.createdAt);
+        const diffDays = (now - date) / (1000 * 60 * 60 * 24);
+
+        return (
+          (timeRange === "Last 24 Hours" && diffDays <= 1) ||
+          (timeRange === "Last 7 Days" && diffDays <= 7) ||
+          (timeRange === "Last 30 Days" && diffDays <= 30)
+        );
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [orders, timeRange]);
+
+  /* ================= PAYMENT METHOD MATRIX ================= */
+  // Calculating totals for COD, CHAPA, and BANK/TELEBIRR
+  const paymentMetrics = useMemo(() => {
+    const init = { gross: 0, commission: 0, net: 0 };
+
+    const matrix = {
+      CHAPA: {
+        ...init,
+        label: "Chapa (Digital)",
+        color: "#3b82f6",
+        icon: <ShieldCheck />,
+      },
+      BANK: {
+        ...init,
+        label: "Bank / Telebirr",
+        color: "#8b5cf6",
+        icon: <Landmark />,
+      },
+      COD: {
+        ...init,
+        label: "Cash on Delivery",
+        color: "#f59e0b",
+        icon: <Wallet />,
+      },
+    };
+
+    filteredData.forEach((order) => {
+      // ✅ ONLY COUNT SUCCESSFUL PAYMENTS
+      if (order.paymentStatus !== "PAID") return;
+
+      // ✅ Normalize payment method
+      let method = (order.paymentMethod || "").toUpperCase();
+
+      if (method.includes("CHAPA")) method = "CHAPA";
+      else if (method.includes("BANK") || method.includes("TELEBIRR"))
+        method = "BANK";
+      else method = "COD";
+
+      const target = matrix[method];
+
+      // ✅ Ensure required financial fields exist
+      if (
+        order.totalPrice == null ||
+        order.adminCommission == null ||
+        order.restaurantAmount == null
+      ) {
+        // Skip incomplete financial records
+        return;
       }
 
-      // 2. Search (ID or Customer)
-      const matchesSearch =
-        p.customer.toLowerCase().includes(search.toLowerCase()) ||
-        p.orderId.toLowerCase().includes(search.toLowerCase());
+      const gross = order.totalPrice;
+      const commission = order.adminCommission;
+      const net = order.restaurantAmount;
 
-      // 3. Method Filter
-      const matchesMethod = methodFilter === "All" || p.paymentMethod === methodFilter;
-
-      // 4. Restaurant Filter
-      const matchesRestaurant = restaurantFilter === "All Restaurants" || p.restaurant === restaurantFilter;
-
-      return matchesTime && matchesSearch && matchesMethod && matchesRestaurant;
+      // ✅ Aggregate totals
+      target.gross += gross;
+      target.commission += commission;
+      target.net += net;
     });
-  }, [payments, search, methodFilter, timeFilter, restaurantFilter]);
 
-  // --- Financial Aggregations ---
-  const stats = useMemo(() => {
-    const totalRevenue = filteredData.reduce((acc, curr) => acc + curr.amount, 0);
-    const totalCommission = filteredData.reduce((acc, curr) => acc + (curr.amount * curr.commissionRate), 0);
-
-    // Digital = BANK/TELEBIRR + CHAPA
-    const digitalTotal = filteredData
-      .filter(p => p.paymentMethod !== "COD")
-      .reduce((acc, curr) => acc + curr.amount, 0);
-
-    // Physical = COD
-    const codTotal = filteredData
-      .filter(p => p.paymentMethod === "COD")
-      .reduce((acc, curr) => acc + curr.amount, 0);
-
-    return { totalRevenue, totalCommission, digitalTotal, codTotal };
+    return Object.values(matrix);
   }, [filteredData]);
 
-  return (
-    <div className="w-full min-h-screen bg-[#F8FAFC] dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-300 px-4 md:px-8 py-10">
+  /* ================= KPI TOTALS ================= */
+  const globalStats = useMemo(() => {
+    const gross = paymentMetrics.reduce((sum, m) => sum + m.gross, 0);
+    const comm = paymentMetrics.reduce((sum, m) => sum + m.commission, 0);
+    return { gross, comm, net: gross - comm };
+  }, [paymentMetrics]);
 
-      {/* 1. TOP HEADER SECTION */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
+  if (loading) return (
+    <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-slate-500 font-bold tracking-widest uppercase text-xs">Processing Ledger...</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="p-4 md:p-10 min-h-screen bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+
+      {/* --- HEADER --- */}
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-12">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="bg-indigo-600 text-white p-1 rounded-md"><FiActivity size={14} /></span>
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Global Finance Hub</span>
-          </div>
-          <h1 className="text-4xl font-black tracking-tight">Financial Control</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            {restaurantFilter === "All Restaurants" ? "Viewing all partner performance" : `Showing records for ${restaurantFilter}`}
-          </p>
+          <h1 className="text-4xl font-black tracking-tighter uppercase italic">
+            Payments <span className="text-blue-600">Portal</span>
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Revenue split & Disbursement tracking</p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <div className="flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 rounded-2xl shadow-sm">
-            {["All Time", "Today", "Weekly"].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTimeFilter(t)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${timeFilter === t
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                  : "text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400"
-                  }`}
-              >
-                {t}
-              </button>
-            ))}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative group">
+            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <select
+              value={selectedRestaurant}
+              onChange={(e) => setSelectedRestaurant(e.target.value)}
+              className="pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-bold text-sm"
+            >
+              <option value="ALL">All Restaurants</option>
+              {restaurants.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           </div>
-          <button className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 transition-all">
-            <FiDownload /> Export CSV
+
+          <div className="relative group">
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-bold text-sm"
+            >
+              <option>Last 24 Hours</option>
+              <option>Last 7 Days</option>
+              <option>Last 30 Days</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          </div>
+
+          <button className="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30">
+            <Download size={20} />
           </button>
         </div>
+      </header>
+
+      {/* --- TOP KPI ROW --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <MainStat label="Platform Gross" value={globalStats.gross} sub="Total processed volume" icon={<DollarSign />} color="blue" />
+        <MainStat label="Earned Commission" value={globalStats.comm} sub="Your 10% platform share" icon={<Percent />} color="emerald" />
+        <MainStat label="Restaurant Payouts" value={globalStats.net} sub="Net amount to be settled" icon={<ArrowUpRight />} color="purple" />
       </div>
 
-      {/* 2. ANALYTICS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <StatCard title="Gross Volume" value={`${stats.totalRevenue.toLocaleString()} ETB`} icon={<FiDollarSign />} color="indigo" growth="+12%" />
-        <StatCard title="Total Comm." value={`${stats.totalCommission.toLocaleString()} ETB`} icon={<FiPieChart />} color="emerald" growth="Earned" />
-        <StatCard title="Digital Pay" value={`${stats.digitalTotal.toLocaleString()} ETB`} icon={<FiCreditCard />} color="blue" growth="Auto-Settle" />
-        <StatCard title="COD Pending" value={`${stats.codTotal.toLocaleString()} ETB`} icon={<FiTruck />} color="amber" growth="Manual Rec." />
-      </div>
-
-      {/* 3. MULTI-FILTER BAR */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-8">
-        {/* Search */}
-        <div className="lg:col-span-4 relative group">
-          <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search Order ID or Client..."
-            className="w-full pl-14 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl outline-none focus:ring-4 focus:ring-indigo-500/10 font-medium"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        {/* Restaurant Filter */}
-        <div className="lg:col-span-4 relative">
-          <FiFilter className="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-500" />
-          <select
-            className="w-full pl-14 pr-10 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl outline-none appearance-none font-bold text-sm cursor-pointer"
-            value={restaurantFilter}
-            onChange={(e) => setRestaurantFilter(e.target.value)}
+      {/* --- PAYMENT METHOD MATRIX GRID --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        {paymentMetrics.map((method, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none"
           >
-            {restaurantOptions.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  {method.icon}
+                </div>
+                <h3 className="font-black uppercase tracking-tight">{method.label}</h3>
+              </div>
+              <span className="text-[10px] font-black px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg uppercase">Active</span>
+            </div>
 
-        {/* Method Filter */}
-        <div className="lg:col-span-4 relative">
-          <FiCreditCard className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <select
-            className="w-full pl-14 pr-10 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl outline-none appearance-none font-bold text-sm cursor-pointer"
-            value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value)}
-          >
-            <option value="All">All Payment Methods</option>
-            <option value="BANK or TELEBIRR">BANK or TELEBIRR</option>
-            <option value="CHAPA">CHAPA</option>
-            <option value="COD">COD (Cash on Delivery)</option>
-          </select>
-        </div>
+            <div className="space-y-6">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Revenue</p>
+                <p className="text-3xl font-black">Br {method.gross.toLocaleString()}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-50 dark:border-slate-800">
+                <div>
+                  <p className="text-[10px] font-black text-rose-500 uppercase mb-1">Commission</p>
+                  <p className="text-lg font-bold">Br {method.commission.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-emerald-500 uppercase mb-1">Restaurant Net</p>
+                  <p className="text-lg font-bold">Br {method.net.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-4">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(method.gross / globalStats.gross) * 100 || 0}%` }}
+                  className="h-full bg-blue-600 rounded-full"
+                />
+              </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
-      {/* 4. DATA TABLE */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200/50 dark:shadow-none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 text-[10px] uppercase tracking-[0.2em] font-black">
-                <th className="px-8 py-6">Reference</th>
-                <th className="px-8 py-6">Restaurant</th>
-                <th className="px-8 py-6">Order Details</th>
-                <th className="px-8 py-6 text-right">Settlement</th>
-                <th className="px-8 py-6 text-center">Method</th>
-                <th className="px-8 py-6 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filteredData.length > 0 ? filteredData.map((txn) => {
-                const commissionAmt = txn.amount * txn.commissionRate;
-                const restaurantNet = txn.amount - commissionAmt;
+      {/* --- VISUAL ANALYTICS SECTION --- */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
 
-                return (
-                  <tr key={txn._id} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-900/5 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col">
-                        <span className="font-black text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">#{txn.orderId}</span>
-                        <span className="text-[10px] text-slate-400 mt-1"><FiCalendar className="inline mr-1" />{new Date(txn.date).toLocaleDateString()}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black uppercase tracking-tighter">
-                        {txn.restaurant}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{txn.amount.toLocaleString()} ETB</span>
-                        <span className="text-[10px] text-slate-400 italic">By {txn.customer}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex flex-col">
-                        <span className="text-emerald-600 dark:text-emerald-400 font-black">+{commissionAmt.toLocaleString()}</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">Payout: {restaurantNet.toLocaleString()}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex justify-center">
-                        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${txn.paymentMethod === 'COD'
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20'
-                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/20'
-                          }`}>
-                          {txn.paymentMethod === 'COD' ? <FiTruck size={12} /> : <FiCreditCard size={12} />}
-                          {txn.paymentMethod}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${txn.status === 'Settled' || txn.status === 'Collected' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
-                          }`} />
-                        <span className="text-[10px] font-black uppercase tracking-tight">{txn.status}</span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }) : (
-                <tr>
-                  <td colSpan="6" className="px-8 py-20 text-center opacity-30">
-                    <FiSearch size={48} className="mx-auto mb-4" />
-                    <p className="font-black uppercase tracking-widest">No matched financial records</p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* BAR CHART: METHOD COMPARISON */}
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+              <PieIcon className="text-blue-600" /> Revenue Distribution
+            </h3>
+            <RefreshCcw className="text-slate-300 w-4 h-4 cursor-pointer hover:rotate-180 transition-transform duration-700" />
+          </div>
+
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={paymentMetrics}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                <XAxis
+                  dataKey="label"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                />
+                <YAxis hide />
+                <Tooltip
+                  cursor={{ fill: 'transparent' }}
+                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+                />
+                <Bar dataKey="gross" radius={[10, 10, 0, 0]} barSize={50}>
+                  {paymentMetrics.map((entry, index) => (
+                    <Cell key={index} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
+
+        {/* REVENUE SPLIT SUMMARY */}
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+          <h3 className="text-xl font-black uppercase tracking-tight mb-8">Financial Health Score</h3>
+          <div className="space-y-8">
+            <HealthItem
+              label="Digital Adoption (Chapa)"
+              percent={((paymentMetrics.find(m => m.label.includes("Chapa"))?.gross / globalStats.gross) * 100) || 0}
+              color="blue"
+            />
+            <HealthItem
+              label="Bank Settlement (Telebirr)"
+              percent={((paymentMetrics.find(m => m.label.includes("Bank"))?.gross / globalStats.gross) * 100) || 0}
+              color="purple"
+            />
+            <HealthItem
+              label="Cash Exposure (COD)"
+              percent={((paymentMetrics.find(m => m.label.includes("Cash"))?.gross / globalStats.gross) * 100) || 0}
+              color="amber"
+            />
+          </div>
+
+          <div className="mt-12 p-6 bg-blue-50 dark:bg-blue-900/10 rounded-3xl border border-blue-100 dark:border-blue-800">
+            <div className="flex gap-4">
+              <div className="p-3 bg-blue-600 rounded-2xl text-white self-start">
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <h4 className="font-black text-blue-900 dark:text-blue-100 uppercase text-xs tracking-widest">Platform Note</h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1 font-medium leading-relaxed">
+                  Digital payments via Chapa and Bank Transfer are settled instantly. COD payments require manual reconciliation by restaurant staff.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value, icon, color, growth }) {
-  const colors = {
-    indigo: "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 border-indigo-100 dark:border-indigo-900/30",
-    emerald: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-100 dark:border-emerald-900/30",
-    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-100 dark:border-blue-900/30",
-    amber: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-100 dark:border-amber-900/30",
+/* ================= SUB-COMPONENTS ================= */
+
+function MainStat({ label, value, sub, icon, color }) {
+  const themes = {
+    blue: "bg-blue-600 shadow-blue-500/20",
+    emerald: "bg-emerald-600 shadow-emerald-500/20",
+    purple: "bg-purple-600 shadow-purple-500/20",
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all duration-300 hover:shadow-xl">
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border-2 ${colors[color]}`}>
-        {React.cloneElement(icon, { size: 28 })}
+    <motion.div
+      whileHover={{ y: -5 }}
+      className={`${themes[color]} p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden`}
+    >
+      <div className="relative z-10">
+        <div className="flex justify-between items-start mb-6">
+          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+            {React.cloneElement(icon, { size: 24 })}
+          </div>
+          <ArrowUpRight className="opacity-40" />
+        </div>
+        <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">{label}</p>
+        <h2 className="text-4xl font-black mt-1 tracking-tighter">Br {value.toLocaleString()}</h2>
+        <p className="text-white/40 text-[10px] font-bold mt-2 uppercase tracking-widest">{sub}</p>
       </div>
-      <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">{title}</p>
-      <h3 className="text-3xl font-black mt-2 tracking-tighter">{value}</h3>
-      <div className="flex items-center gap-1 text-emerald-500 text-[10px] font-black mt-4">
-        <FiTrendingUp /> {growth}
+
+      {/* Decorative Blur */}
+      <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+    </motion.div>
+  );
+}
+
+function HealthItem({ label, percent, color }) {
+  const colors = {
+    blue: "bg-blue-500",
+    purple: "bg-purple-500",
+    amber: "bg-amber-500",
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-end">
+        <span className="text-xs font-black uppercase tracking-widest text-slate-500">{label}</span>
+        <span className="text-sm font-black">{percent.toFixed(1)}%</span>
+      </div>
+      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${percent}%` }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className={`h-full ${colors[color]} rounded-full`}
+        />
       </div>
     </div>
   );

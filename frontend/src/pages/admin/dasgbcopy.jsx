@@ -1,299 +1,291 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import {
-  FiHome,
-  FiUsers,
-  FiAlertCircle,
-  FiLogOut,
-  FiShoppingBag,
-  FiInstagram,
-  FiFileText,
+  FiHome, FiUsers, FiAlertCircle, FiLogOut, FiShoppingBag, FiFileText,
+  FiMoon, FiSun, FiGrid, FiTrendingUp, FiActivity, FiMessageSquare,
+  FiGlobe, FiChevronDown, FiClock, FiCheckCircle
 } from "react-icons/fi";
-import OrdersPage from "./Orders";
-import UsersPage from "./Users";
-import RestaurantsPage from "./Restaurant";
-import Category from "./Category";
+import { FaCreditCard, FaStore } from "react-icons/fa";
 import axios from "axios";
+import { io } from "socket.io-client";
+import { ThemeContext } from "../../context/ThemeContext";
+import { useTranslation } from "react-i18next";
+
+const API_URL = "http://localhost:5000";
+const SOCKET_URL = "http://localhost:5000";
 
 export default function AdminDashboard() {
+  const { t, i18n } = useTranslation();
+  const { darkMode, toggleTheme } = useContext(ThemeContext);
+
   const [activePage, setActivePage] = useState(() => {
-    return localStorage.getItem("activePage") || "dashboard";
+    return localStorage.getItem("admin_active_tab") || "dashboard";
   });
   const [unseenCount, setUnseenCount] = useState(0);
+  const [openLang, setOpenLang] = useState(false);
 
-  // Fetch unseen notifications on load
+  // ---------------- PERSISTENCE & SOCKETS ----------------
   useEffect(() => {
-    fetchUnseenCount();
+    localStorage.setItem("admin_active_tab", activePage);
+    const socket = io(SOCKET_URL, { withCredentials: true });
+    const adminId = localStorage.getItem("adminId");
+    if (adminId) socket.emit("registerAdmin", adminId);
+
+    socket.on("adminNewOrder", () => setUnseenCount((prev) => prev + 1));
+    return () => socket.disconnect();
+  }, [activePage]);
+
+  useEffect(() => {
+    const fetchUnseen = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/orders/admin/unseen-count`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setUnseenCount(res.data.unseenCount);
+      } catch (err) { console.error("Unseen count error", err); }
+    };
+    fetchUnseen();
   }, []);
 
-  const fetchUnseenCount = async () => {
-    try {
-      const res = await axios.get(
-        "http://localhost:5000/api/orders/admin/unseen-count",
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
-      );
-      setUnseenCount(res.data.unseenCount);
-    } catch (err) {
-      console.error("Error fetching unseen count:", err);
-    }
-  };
-
-  const handlePageChange = (page) => {
-    setActivePage(page);
-    localStorage.setItem("activePage", page);
-
-    if (page === "orders") {
-      // Mark notifications as seen when opening Orders page
-      axios.post(
-        "http://localhost:5000/api/orders/admin/mark-seen",
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
-      );
-      setUnseenCount(0);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch("http://localhost:5000/api/auth/logout", { method: "POST" });
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      window.location.href = "/";
-    } catch (error) {
-      console.log("Logout error:", error);
-    }
+  const handleLogout = () => {
+    localStorage.clear();
+    window.location.href = "/";
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <aside className="w-64 bg-[#1F1F25] text-gray-300 flex flex-col">
-        <div className="p-6 flex items-center justify-between">
-          <div className="text-xl font-bold text-white">Addis Eats</div>
-        </div>
+    <div className={`flex w-full min-h-screen ${darkMode ? "dark" : ""}`}>
+      <div className="flex w-full min-h-screen bg-slate-50 dark:bg-[#0F172A] transition-colors duration-300">
 
-        <nav className="flex-1 space-y-2 px-4">
-          <SidebarItem
-            icon={<FiHome />}
-            label="Dashboard"
-            active={activePage === "dashboard"}
-            onClick={() => handlePageChange("dashboard")}
-          />
-          <SidebarItem
-            icon={<FiUsers />}
-            label="Users"
-            active={activePage === "users"}
-            onClick={() => handlePageChange("users")}
-          />
-          <SidebarItem
-            icon={<FiShoppingBag />}
-            label="Restaurants"
-            active={activePage === "restaurants"}
-            onClick={() => handlePageChange("restaurants")}
-          />
-          <SidebarItem
-            icon={<FiShoppingBag />}
-            label="Categories"
-            active={activePage === "categories"}
-            onClick={() => handlePageChange("categories")}
-          />
-          <SidebarItem
-            icon={<FiFileText />}
-            label={`Orders ${unseenCount > 0 ? `(${unseenCount})` : ""}`}
-            active={activePage === "orders"}
-            onClick={() => handlePageChange("orders")}
-          />
-        </nav>
-      </aside>
+        {/* ---------------- Sidebar ---------------- */}
+        <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed h-full z-20">
+          <div className="p-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                <FiActivity size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl font-black dark:text-white uppercase leading-none">Addis<span className="text-indigo-600">Eats</span></h1>
+                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">{t("centralAdmin")}</p>
+              </div>
+            </div>
+          </div>
 
-      <main className="flex-1 p-6 overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">
-            {activePage === "dashboard" && "Admin Overview"}
-            {activePage === "users" && "User Management"}
-            {activePage === "restaurants" && "Restaurant Management"}
-            {activePage === "categories" && "Category Management"}
-            {activePage === "orders" && "Orders Management"}
-          </h1>
+          <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+            <SidebarItem icon={<FiHome />} label={t("overview")} active={activePage === "dashboard"} onClick={() => setActivePage("dashboard")} />
+            <SidebarItem icon={<FiUsers />} label={t("users")} active={activePage === "users"} onClick={() => setActivePage("users")} />
+            <SidebarItem icon={<FiShoppingBag />} label={t("restaurants")} active={activePage === "restaurants"} onClick={() => setActivePage("restaurants")} />
+            <SidebarItem icon={<FiGrid />} label={t("categories")} active={activePage === "categories"} onClick={() => setActivePage("categories")} />
+            <SidebarItem icon={<FiFileText />} label={t("orders")} active={activePage === "orders"} onClick={() => setActivePage("orders")} badge={unseenCount} />
+            <SidebarItem icon={<FaCreditCard />} label={t("payments")} active={activePage === "payment"} onClick={() => setActivePage("payment")} />
+            <SidebarItem icon={<FiTrendingUp />} label={t("analytics")} active={activePage === "analytics"} onClick={() => setActivePage("analytics")} />
+            <SidebarItem icon={<FiMessageSquare />} label={t("reviews")} active={activePage === "reviews"} onClick={() => setActivePage("reviews")} />
+          </nav>
 
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-white bg-red-500 px-4 py-2 rounded hover:bg-red-600 shadow"
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
+            <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all font-semibold text-sm">
+              {darkMode ? <><FiSun className="text-yellow-500" /> {t("lightMode")}</> : <><FiMoon className="text-indigo-500" /> {t("nightMode")}</>}
+            </button>
+            <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 font-semibold text-sm hover:bg-rose-100 dark:hover:bg-rose-900/20 transition-all">
+              <FiLogOut /> {t("logout")}
+            </button>
+          </div>
+        </aside>
+
+        {/* ---------------- Main Content ---------------- */}
+        <main className="flex-1 ml-72 p-8 lg:p-12">
+          <header className="flex justify-between items-start mb-10">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+                {activePage === "dashboard" ? t("platformAnalytics") : t(activePage)}
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">{t("welcomeBackAdmin")}</p>
+            </div>
+
+            <div className="flex items-center gap-6">
+              {/* Language Switcher */}
+              <div className="relative">
+                <button onClick={() => setOpenLang(!openLang)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all text-xs font-black uppercase text-slate-600 dark:text-slate-300">
+                  <FiGlobe className="text-indigo-600" />
+                  {i18n.language === "am" ? "አማርኛ" : "English"}
+                  <FiChevronDown className={`transition-transform ${openLang ? 'rotate-180' : ''}`} />
+                </button>
+                {openLang && (
+                  <div className="absolute right-0 mt-3 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                    <button onClick={() => { i18n.changeLanguage("en"); setOpenLang(false); }} className="flex items-center gap-3 w-full px-5 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-white border-b border-slate-50 dark:border-slate-800">🇺🇸 English</button>
+                    <button onClick={() => { i18n.changeLanguage("am"); setOpenLang(false); }} className="flex items-center gap-3 w-full px-5 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-white">🇪🇹 አማርኛ</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+
+          <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {activePage === "dashboard" && <AdminDashboardContent />}
+            {/* Other pages would follow the same pattern */}
+          </section>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- ADMIN DASHBOARD CONTENT ---------------- */
+function AdminDashboardContent() {
+  const { t } = useTranslation();
+  const [orders, setOrders] = useState([]);
+  const [restaurants, setRestaurants] = useState([]);
+  const [selectedRest, setSelectedRest] = useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const endpoint = selectedRest === "ALL"
+          ? `${API_URL}/api/orders`
+          : `${API_URL}/api/orders/restaurant/${selectedRest}`;
+
+        const [ordersRes, restRes] = await Promise.all([
+          axios.get(endpoint, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/api/restaurants`)
+        ]);
+        setOrders(ordersRes.data || []);
+        setRestaurants(restRes.data || []);
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
+    };
+    fetchData();
+  }, [selectedRest, token]);
+
+  const stats = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayOrders = orders.filter(o => o.createdAt.slice(0, 10) === today);
+    const revenue = todayOrders.reduce((sum, o) => sum + (o.adminCommission || 0), 0);
+    return {
+      totalToday: todayOrders.length,
+      revenueToday: revenue,
+      pending: todayOrders.filter(o => o.orderStatus === "PENDING").length,
+      delivered: todayOrders.filter(o => o.orderStatus === "DELIVERED").length
+    };
+  }, [orders]);
+
+  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-indigo-600"></div></div>;
+
+  return (
+    <div className="space-y-8">
+      {/* RESTAURANT FILTER */}
+      <div className="flex justify-end">
+        <div className="relative group">
+          <FaStore className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <select
+            value={selectedRest}
+            onChange={(e) => setSelectedRest(e.target.value)}
+            className="pl-12 pr-10 py-3 bg-white dark:bg-slate-800 dark:text-white rounded-2xl shadow-sm border-none font-bold text-sm min-w-[250px] appearance-none focus:ring-2 focus:ring-indigo-500"
           >
-            <FiLogOut />
-            Logout
-          </button>
+            <option value="ALL">{t("allRestaurants")}</option>
+            {restaurants.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
+          </select>
+          <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
-
-        {activePage === "dashboard" && <DashboardPage />}
-        {activePage === "users" && <UsersPage />}
-        {activePage === "restaurants" && <RestaurantsPage />}
-        {activePage === "categories" && <Category />}
-        {activePage === "orders" && <OrdersPage />}
-      </main>
-    </div>
-  );
-}
-
-function SidebarItem({ icon, label, active, onClick }) {
-  return (
-    <div
-      onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-2 rounded cursor-pointer 
-      ${active ? "bg-gray-700 text-white" : "hover:bg-gray-700"}`}
-    >
-      <span className="text-lg">{icon}</span>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-/* ---------------- Dashboard Page ---------------- */
-function DashboardPage() {
-  return (
-    <div>
-      {/* ---------- Stats ---------- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <div className="text-gray-600">Total Orders</div>
-          <div className="text-3xl font-bold mt-2">1,245</div>
-          <div className="text-green-600 text-sm mt-1">▲ Up this week</div>
-        </Card>
-
-        <Card>
-          <div className="text-gray-600">Weekly Revenue</div>
-          <div className="text-3xl font-bold mt-2">12</div>
-          <div className="text-gray-500 mt-1">245,000 ETB</div>
-        </Card>
-
-        <Card>
-          <div className="text-gray-600">New Registrations</div>
-          <div className="text-3xl font-bold mt-2 text-red-500">
-            3 High-Risk Orders
-          </div>
-          <button className="mt-3 text-sm text-white bg-red-500 px-4 py-1 rounded">
-            View Details
-          </button>
-        </Card>
       </div>
 
-      {/* ---------- Analytics & Alerts ---------- */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <Card>
-          <h2 className="text-gray-700 font-semibold mb-4">
-            Platform Analytics
-          </h2>
-          <p className="text-sm text-gray-500 mb-2">Order Trends by Cuisine</p>
-          <div className="flex space-x-6 mt-4">
-            <Bar
-              title="Traditional"
-              bars={[30, 60, 80]}
-              colors={["bg-blue-500", "bg-blue-400", "bg-blue-300"]}
-            />
-            <Bar
-              title="Fast Food"
-              bars={[40, 70, 120]}
-              colors={["bg-green-500", "bg-green-400", "bg-green-300"]}
-            />
-            <Bar
-              title="International"
-              bars={[60, 100, 150]}
-              colors={["bg-red-500", "bg-red-400", "bg-red-300"]}
-            />
-          </div>
-        </Card>
-
-        <Card>
-          <h2 className="text-gray-700 font-semibold mb-4">AI Fraud Alerts</h2>
-          <p className="text-lg font-bold text-red-500">3 High-Risk Orders</p>
-          <button className="mt-3 text-sm bg-red-500 text-white py-1 px-4 rounded">
-            Review Restaurants
-          </button>
-
-          <div className="mt-6">
-            <h3 className="text-gray-600 text-sm mb-2">Recent Activity</h3>
-            <AlertItem text="User ‘GWT’ anti-installation" />
-            <AlertItem text="User ‘Kidst A.’ reviewed order #2021" />
-          </div>
-        </Card>
+      {/* KPI GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard title={t("dailyOrders")} value={stats.totalToday} icon={<FiShoppingBag />} color="blue" />
+        <StatCard title={t("platformRevenue")} value={`ETB ${stats.revenueToday.toLocaleString()}`} icon={<FiTrendingUp />} color="emerald" />
+        <StatCard title={t("pending")} value={stats.pending} icon={<FiClock />} color="orange" />
+        <StatCard title={t("successful")} value={stats.delivered} icon={<FiCheckCircle />} color="indigo" />
       </div>
 
-      {/* ---------- Restaurant Approvals ---------- */}
-      <Card className="mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-gray-700 font-semibold">
-            Pending Restaurant Approvals
-          </h2>
-          <button className="bg-red-500 text-white px-4 py-1 rounded text-sm">
-            Approve / Reject
-          </button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <Card title={t("systemOrderStream")} subtitle={t("recentTransactions")}>
+            <div className="mt-6 space-y-4">
+              {orders.slice(0, 6).map((o) => (
+                <div key={o._id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs">
+                      #{o._id.slice(-4).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm dark:text-white">{o.restaurantId?.name || "Restaurant"}</p>
+                      <p className="text-[10px] uppercase font-black text-slate-400">{o.customerName?.firstName} • {new Date(o.createdAt).toLocaleTimeString()}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-slate-900 dark:text-white text-sm">ETB {o.totalPrice}</p>
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${o.orderStatus === "DELIVERED" ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"}`}>
+                      {o.orderStatus}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
 
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">Name</th>
-              <th>Owner Email</th>
-              <th>Date</th>
-              <th>Orders</th>
-              <th>Rating</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b text-gray-600">
-              <td className="py-3">Lucy Hotel</td>
-              <td>admin@lucy.com</td>
-              <td>Jan 4</td>
-              <td>124</td>
-              <td>4.8</td>
-            </tr>
-            <tr className="border-b text-gray-600">
-              <td className="py-3">Kidist Restaurant</td>
-              <td>kidist@gmail.com</td>
-              <td>Jan 5</td>
-              <td>83</td>
-              <td>4.5</td>
-            </tr>
-          </tbody>
-        </table>
-      </Card>
+        <div className="space-y-6">
+          <Card title={t("platformPulse")}>
+            <div className="space-y-4 mt-4">
+              <StatusRow label={t("activeRestaurants")} value={restaurants.length} color="blue" />
+              <StatusRow label={t("failedPayments")} value={orders.filter(o => o.paymentStatus === "FAILED").length} color="orange" />
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ---------------- Reusable Components ---------------- */
-function Card({ children, className }) {
+/* ---------------- REUSABLE UI COMPONENTS ---------------- */
+
+function SidebarItem({ icon, label, active, onClick, badge }) {
   return (
-    <div className={`bg-white p-6 rounded-lg shadow ${className}`}>
+    <button onClick={onClick} className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all group ${active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
+      <div className="flex items-center gap-4">
+        <span className={`text-xl ${active ? "text-white" : "text-slate-400 group-hover:text-indigo-500"}`}>{icon}</span>
+        <span className="font-bold text-sm tracking-tight">{label}</span>
+      </div>
+      {badge > 0 && <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg animate-pulse">{badge}</span>}
+    </button>
+  );
+}
+
+function StatCard({ title, value, icon, color }) {
+  const colors = {
+    blue: "text-blue-600 bg-blue-50 dark:bg-blue-900/20",
+    emerald: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20",
+    orange: "text-orange-600 bg-orange-50 dark:bg-orange-900/20",
+    indigo: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20",
+  };
+  return (
+    <div className="bg-white dark:bg-slate-900 p-7 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-lg">
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${colors[color]}`}>{icon}</div>
+      <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">{title}</p>
+      <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{value}</h2>
+    </div>
+  );
+}
+
+function Card({ children, title, subtitle }) {
+  return (
+    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
+      <h3 className="text-lg font-black tracking-tight dark:text-white uppercase">{title}</h3>
+      {subtitle && <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{subtitle}</p>}
       {children}
     </div>
   );
 }
 
-function Bar({ title, bars, colors }) {
+function StatusRow({ label, value, color }) {
+  const dots = { blue: "bg-blue-500", orange: "bg-orange-500", emerald: "bg-emerald-500" };
   return (
-    <div className="flex flex-col items-center">
-      <div className="space-y-1">
-        {bars.map((height, i) => (
-          <div
-            key={i}
-            className={`${colors[i]} w-6 rounded`}
-            style={{ height: `${height}px` }}
-          ></div>
-        ))}
+    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+      <div className="flex items-center gap-3">
+        <div className={`w-2 h-2 rounded-full ${dots[color]}`}></div>
+        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{label}</span>
       </div>
-      <p className="text-xs text-gray-500 mt-2">{title}</p>
-    </div>
-  );
-}
-
-function AlertItem({ text }) {
-  return (
-    <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-      <FiAlertCircle className="text-red-500" />
-      {text}
+      <span className="font-black text-lg dark:text-white">{value}</span>
     </div>
   );
 }

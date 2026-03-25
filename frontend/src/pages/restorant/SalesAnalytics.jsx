@@ -9,10 +9,11 @@ import {
   ArrowUpRight, Calendar, ChevronDown, Award
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { useTranslation } from "react-i18next";
 const API_BASE_URL = "http://localhost:5000";
 
 export default function SalesAnalytics({ restaurantId }) {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [timeRange, setTimeRange] = useState("Last 7 Days");
 
@@ -105,9 +106,9 @@ export default function SalesAnalytics({ restaurantId }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
-            Sales Analytics
+            {t("salesAnalyticss.title")}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Real-time performance overview</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1"><p>{t("salesAnalyticss.subtitle")}</p></p>
         </div>
 
         <div className="relative group">
@@ -117,21 +118,20 @@ export default function SalesAnalytics({ restaurantId }) {
             onChange={(e) => setTimeRange(e.target.value)}
             className="appearance-none pl-10 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium cursor-pointer"
           >
-            <option>Last 24 Hours</option>
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
+            <option>{t("time.last24")}</option>
+            <option>{t("time.last7")}</option>
+            <option><option>{t("time.last30")}</option></option>
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
       </div>
-
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Total Revenue", value: `Br ${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-          { label: "Total Orders", value: totalOrders, icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "Avg. Order Value", value: `Br ${avgOrderValue.toFixed(2)}`, icon: TrendingUp, color: "text-amber-500", bg: "bg-amber-500/10" },
-          { label: "Active Customers", value: totalOrders, icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+          { label: t("kpi.revenue"), value: `Br ${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+          { label: t("kpi.orders"), value: totalOrders, icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-500/10" },
+          { label: t("kpi.avgOrder"), value: `Br ${avgOrderValue.toFixed(2)}`, icon: TrendingUp, color: "text-amber-500", bg: "bg-amber-500/10" },
+          { label: t("kpi.customers"), value: totalOrders, icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
         ].map((card, i) => (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -163,7 +163,7 @@ export default function SalesAnalytics({ restaurantId }) {
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              Revenue Growth <ArrowUpRight className="text-emerald-500 w-5 h-5" />
+              {t("charts.revenue")} <ArrowUpRight className="text-emerald-500 w-5 h-5" />
             </h2>
           </div>
           <div className="h-[350px] w-full">
@@ -210,7 +210,7 @@ export default function SalesAnalytics({ restaurantId }) {
           animate={{ opacity: 1, scale: 1 }}
           className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm"
         >
-          <h2 className="text-xl font-bold mb-6">Sales by Category</h2>
+          <h2 className="text-xl font-bold mb-6">{t("charts.category")}</h2>
           <div className="h-[300px] relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -230,7 +230,7 @@ export default function SalesAnalytics({ restaurantId }) {
             </ResponsiveContainer>
             {/* Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-slate-400 text-sm">Total Items</span>
+              <span className="text-slate-400 text-sm">{t("charts.totalItems")}</span>
               <span className="text-2xl font-black">
                 {CATEGORY_DATA.reduce((a, b) => a + b.value, 0)}
               </span>
@@ -258,19 +258,19 @@ export default function SalesAnalytics({ restaurantId }) {
       >
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <Award className="text-amber-500" /> Top Performing Items
+            <Award className="text-amber-500" /> {t("tablee.title")}
           </h2>
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Showing Top 5</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{t("tablee.top5")}</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/50 dark:bg-slate-800/50 text-slate-500 text-xs uppercase tracking-widest font-semibold">
-                <th className="px-6 py-4">Dish Name</th>
-                <th className="px-6 py-4">Popularity</th>
-                <th className="px-6 py-4">Items Sold</th>
-                <th className="px-6 py-4 text-right">Total Revenue</th>
+                <th className="px-6 py-4">{t("tablee.dish")}</th>
+                <th className="px-6 py-4">{t("tablee.popularity")}</th>
+                <th className="px-6 py-4">{t("tablee.popularity")}</th>
+                <th className="px-6 py-4 text-right">{t("tablee.sold")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -294,7 +294,7 @@ export default function SalesAnalytics({ restaurantId }) {
                   </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                      {dish.sales} sold
+                      {dish.sales} {t("tablee.sold")}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">

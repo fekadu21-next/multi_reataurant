@@ -3,6 +3,8 @@ import {
   createReview,
   getRestaurantReviews,
   checkReviewStatus,
+  getAllReviews,     // ✅ new
+  deleteReview
 } from "../controllers/reviewController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -17,5 +19,9 @@ router.get("/restaurant/:restaurantId", getRestaurantReviews);
 
 // check if order reviewed
 router.get("/check/:orderId", protect, checkReviewStatus);
+router.get("/admin/all", protect, getAllReviews);
+
+// Delete a review by ID (admin)
+router.delete("/admin/:reviewId", protect, deleteReview);
 
 export default router;

@@ -2,14 +2,14 @@
 import { FaClipboardList, FaHeart, FaUserCog, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const ProfileDropdown = ({ user, onClose }) => {
   const navigate = useNavigate();
   const dropdownRef = useRef();
-
+  const { t } = useTranslation();
   const [localUser, setLocalUser] = useState(user);
 
-  // Update dropdown when localStorage changes
   useEffect(() => {
     const handleStorageChange = () => {
       const updatedUser = JSON.parse(localStorage.getItem("user") || "null");
@@ -19,7 +19,6 @@ const ProfileDropdown = ({ user, onClose }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -41,12 +40,10 @@ const ProfileDropdown = ({ user, onClose }) => {
     window.location.reload();
   };
 
-  // Get first name from fullname
-  const fullName = localUser?.fullname || "User";
+  const fullName = localUser?.fullname || t("userDefault");
   const firstName = fullName.trim().split(" ")[0];
   const firstLetter = firstName.charAt(0).toUpperCase();
 
-  // Handle profile image path (full URL or relative)
   const profileImageUrl =
     localUser?.profileImage?.startsWith("http")
       ? localUser.profileImage
@@ -54,83 +51,93 @@ const ProfileDropdown = ({ user, onClose }) => {
         ? `http://localhost:5000${localUser.profileImage}`
         : null;
 
+  // Reusable component for menu items
+  const MenuItem = ({ icon: Icon, label, onClick, variant = "default" }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 w-full px-4 py-3 text-sm transition-all duration-200 group
+        ${variant === "danger"
+          ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+        }`}
+    >
+      <div className={`p-2 rounded-lg transition-colors 
+        ${variant === "danger"
+          ? "bg-red-50 dark:bg-red-500/10 group-hover:bg-red-100"
+          : "bg-slate-100 dark:bg-slate-800 group-hover:bg-white dark:group-hover:bg-slate-700"
+        }`}>
+        <Icon size={16} />
+      </div>
+      <span className="font-medium">{label}</span>
+    </button>
+  );
+
   return (
     <div
       ref={dropdownRef}
-      className="absolute right-0 mt-4 w-72 bg-white rounded-2xl shadow-xl border z-50 overflow-hidden animate-fadeIn"
+      className="absolute right-0 mt-3 w-72 origin-top-right bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
     >
-      {/* Header */}
-      <div className="flex items-center gap-4 px-5 py-4 bg-gray-50 border-b">
-        {profileImageUrl ? (
-          <img
-            src={profileImageUrl}
-            alt="profile"
-            className="w-12 h-12 rounded-full object-cover"
-            onError={(e) => {
-              e.target.style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-[#2A5248] flex items-center justify-center text-white text-lg font-semibold">
-            {firstLetter}
-          </div>
-        )}
+      {/* User Header Section */}
+      <div className="relative overflow-hidden px-5 py-6 border-b border-slate-100 dark:border-slate-800">
+        {/* Subtle Background Decoration */}
+        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl" />
 
-        <div>
-          <p className="font-semibold text-gray-800">{firstName}</p>
-          <p className="text-xs text-gray-500 truncate w-40">{localUser?.email}</p>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="relative">
+            {profileImageUrl ? (
+              <img
+                src={profileImageUrl}
+                alt="profile"
+                className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white dark:ring-slate-800 shadow-md"
+                onError={(e) => { e.target.style.display = "none"; }}
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-cyan-500/20">
+                {firstLetter}
+              </div>
+            )}
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full" />
+          </div>
+
+          <div className="flex flex-col min-w-0">
+            <h4 className="font-bold text-slate-900 dark:text-white truncate">
+              {fullName}
+            </h4>
+            <p className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate">
+              {localUser?.email}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Menu */}
-      <div className="py-2">
-        <button onClick={() => handleNavigate("/account/myorders")} className="menu-item">
-          <FaClipboardList />
-          <span>My Orders</span>
-        </button>
-
-        <button onClick={() => handleNavigate("/account/favorites")} className="menu-item">
-          <FaHeart />
-          <span>Favorites</span>
-        </button>
-
-        <button onClick={() => handleNavigate("/account")} className="menu-item">
-          <FaUserCog />
-          <span>Account Settings</span>
-        </button>
+      {/* Navigation Menu */}
+      <div className="p-2 space-y-0.5">
+        <MenuItem
+          icon={FaClipboardList}
+          label={t("myOrders")}
+          onClick={() => handleNavigate("/account/myorders")}
+        />
+        <MenuItem
+          icon={FaHeart}
+          label={t("favorites")}
+          onClick={() => handleNavigate("/account/favorites")}
+        />
+        <MenuItem
+          icon={FaUserCog}
+          label={t("accountSettings")}
+          onClick={() => handleNavigate("/account")}
+        />
       </div>
 
-      <div className="border-t">
-        <button onClick={handleLogout} className="menu-item text-red-600 hover:bg-red-50">
-          <FaSignOutAlt />
-          <span>Logout</span>
-        </button>
+      {/* Footer / Logout */}
+      <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+        <MenuItem
+          icon={FaSignOutAlt}
+          label={t("logout")}
+          onClick={handleLogout}
+          variant="danger"
+        />
       </div>
-
-      <style>
-        {`
-          .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-            padding: 12px 20px;
-            font-size: 14px;
-            color: #374151;
-            transition: background 0.2s ease;
-          }
-          .menu-item:hover {
-            background: #f3f4f6;
-          }
-          .animate-fadeIn {
-            animation: fadeIn 0.15s ease-in-out;
-          }
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-6px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}
-      </style>
     </div>
   );
 };

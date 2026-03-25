@@ -7,10 +7,11 @@ import {
   FiClock, FiFilter, FiDollarSign,
   FiMapPin, FiMail, FiPhone, FiCalendar, FiRefreshCw, FiCreditCard
 } from "react-icons/fi";
-
+import { useTranslation } from "react-i18next";
 const API_URL = "http://localhost:5000";
 
 export default function Orders({ onSeen }) {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [paymentFilter, setPaymentFilter] = useState("ALL");
@@ -175,21 +176,21 @@ export default function Orders({ onSeen }) {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-2">
         <div>
           <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3 transition-colors">
-            Restaurant Hub <span className="text-blue-600">.</span>
+            {t("restaurantHub")} <span className="text-blue-600">.</span>
           </h2>
-          <p className="text-gray-500 dark:text-slate-400 font-medium mt-1 transition-colors">Live net revenue management (Commission Deducted).</p>
+          <p className="text-gray-500 dark:text-slate-400 font-medium mt-1 transition-colors">{t("liveRevenue")}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
           <div className="bg-white dark:bg-slate-900 px-6 py-4 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm text-right transition-colors">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Total Net Revenue</p>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">{t("totalNetRevenue")}</p>
             <p className="text-2xl font-black text-emerald-600 dark:text-emerald-500">
               {stats.totalNetRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-xs">ETB</span>
             </p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 px-6 py-4 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm text-right transition-colors">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest">Total Net COD</p>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest"> {t("totalNetCOD")}</p>
             <p className="text-2xl font-black text-orange-600 dark:text-orange-500">
               {stats.totalNetCOD.toLocaleString(undefined, { minimumFractionDigits: 2 })} <span className="text-xs">ETB</span>
             </p>
@@ -202,7 +203,7 @@ export default function Orders({ onSeen }) {
         <div className="bg-indigo-600 dark:bg-indigo-700 p-6 rounded-[2rem] text-white shadow-lg transition-colors">
           <div className="flex justify-between items-center">
             <FiActivity size={24} />
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Weekly Net Revenue</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-80">{t("weeklyNetRevenue")}</p>
           </div>
           <h2 className="text-3xl font-black mt-4">${stats.weeklyNetRevenue.toFixed(2)}</h2>
           <p className="text-xs font-medium opacity-70 mt-1">{stats.range}</p>
@@ -211,10 +212,10 @@ export default function Orders({ onSeen }) {
         <div className="bg-white dark:bg-slate-900 border-2 border-orange-100 dark:border-orange-900/30 p-6 rounded-[2rem] shadow-sm transition-colors">
           <div className="flex justify-between items-center text-orange-600 dark:text-orange-500">
             <FiTruck size={24} />
-            <p className="text-[10px] font-black uppercase tracking-widest">Weekly Net COD</p>
+            <p className="text-[10px] font-black uppercase tracking-widest"> {t("weeklyNetCOD")}</p>
           </div>
           <h2 className="text-3xl font-black mt-4 text-gray-900 dark:text-white">${stats.weeklyNetCOD.toFixed(2)}</h2>
-          <p className="text-xs font-medium text-gray-400 dark:text-slate-500 mt-1">Cash to collect this week</p>
+          <p className="text-xs font-medium text-gray-400 dark:text-slate-500 mt-1"> {t("cashToCollect")}</p>
         </div>
       </div>
 
@@ -222,30 +223,30 @@ export default function Orders({ onSeen }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-800 shadow-sm transition-colors">
         <div className="space-y-2">
           <label className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase ml-1 flex items-center gap-2">
-            <FiFilter /> Payment Filter
+            <FiFilter /> {t("paymentFilter")}
           </label>
           <select
             value={paymentFilter}
             onChange={(e) => { setPaymentFilter(e.target.value); applyFilters(e.target.value, recentFilter); }}
             className="w-full bg-gray-50 dark:bg-slate-800 border-none rounded-2xl py-3 px-4 text-sm font-bold text-gray-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           >
-            <option value="ALL">All Payments</option>
-            <option value="PAID">Paid Only</option>
-            <option value="PENDING">Pending Only</option>
+            <option value="ALL"> {t("allPayments")}</option>
+            <option value="PAID">{t("paidOnly")}</option>
+            <option value="PENDING">{t("pendingOnly")}</option>
           </select>
         </div>
 
         <div className="space-y-2">
           <label className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase ml-1 flex items-center gap-2">
-            <FiCalendar /> Sort Order
+            <FiCalendar />  {t("sortOrder")}
           </label>
           <select
             value={recentFilter}
             onChange={(e) => { setRecentFilter(e.target.value); applyFilters(paymentFilter, e.target.value); }}
             className="w-full bg-gray-50 dark:bg-slate-800 border-none rounded-2xl py-3 px-4 text-sm font-bold text-gray-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           >
-            <option value="NEWEST">Latest First</option>
-            <option value="OLDEST">Oldest First</option>
+            <option value="NEWEST"> {t("latestFirst")}</option>
+            <option value="OLDEST">{t("oldestFirst")}</option>
           </select>
         </div>
         <div className="lg:col-span-2 text-right">
@@ -261,17 +262,17 @@ export default function Orders({ onSeen }) {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800 transition-colors">
-                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">Customer Profile</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">Destination</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">Order Items</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">Method</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center">Workflow</th>
-                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-right">Net Earnings</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">{t("customerProfile")}</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">{t("customerProfile")}</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">{t("orderItems")}</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-left">{t("orderItems")}</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center">{t("workflow")}</th>
+                <th className="p-6 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-right">{t("workflow")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50">
               {loading ? (
-                <tr><td colSpan="6" className="py-20 text-center text-gray-400 dark:text-slate-600 font-bold uppercase tracking-widest text-xs">Synchronizing Data...</td></tr>
+                <tr><td colSpan="6" className="py-20 text-center text-gray-400 dark:text-slate-600 font-bold uppercase tracking-widest text-xs">{t("syncing")}...</td></tr>
               ) : filteredOrders.map((o) => (
                 <tr key={o._id} className={`group hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors ${o.isSeen === false ? "bg-blue-50/30 dark:bg-blue-900/10" : ""}`}>
 
@@ -310,7 +311,7 @@ export default function Orders({ onSeen }) {
                       {o.items?.map((i) => `${i.name} x${i.quantity}`).join(", ")}
                     </p>
                     <p className="text-[9px] font-bold text-gray-400 dark:text-slate-500 mt-1 uppercase tracking-tighter transition-colors">
-                      Ordered: {format(new Date(o.createdAt), "MMM dd, HH:mm")}
+                      {t("ordered")}: {format(new Date(o.createdAt), "MMM dd, HH:mm")}
                     </p>
                   </td>
 
@@ -336,10 +337,10 @@ export default function Orders({ onSeen }) {
                         <option value="CONFIRMED" className="dark:bg-slate-900">CONFIRMED</option>
                         <option value="PREPARING" className="dark:bg-slate-900">PREPARING</option>
                         <option value="DELIVERED" className="dark:bg-slate-900">DELIVERED</option>
-                        <option value="CANCELLED" className="dark:bg-slate-900">CANCELLED</option>
+                        {/* <option value="CANCELLED" className="dark:bg-slate-900">CANCELLED</option> */}
                       </select>
                       <span className={`px-2 py-0.5 rounded text-[8px] font-bold border uppercase tracking-tighter transition-colors ${getPaymentStatusStyle(o.paymentStatus)}`}>
-                        Payment: {o.paymentStatus}
+                        {t("payment")}: {o.paymentStatus}
                       </span>
                     </div>
                   </td>
@@ -351,8 +352,8 @@ export default function Orders({ onSeen }) {
                         ETB {((o.totalPrice || 0) - (o.adminCommission || 0)).toFixed(2)}
                       </div>
                       <div className="flex flex-col mt-1">
-                        <span className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase transition-colors">Gross: {o.totalPrice?.toFixed(2)}</span>
-                        <span className="text-[9px] font-bold text-rose-400 dark:text-rose-500/80 uppercase transition-colors">Comm: -{o.adminCommission?.toFixed(2)}</span>
+                        <span className="text-[9px] font-bold text-gray-400 dark:text-slate-500 uppercase transition-colors">{t("gross")}: {o.totalPrice?.toFixed(2)}</span>
+                        <span className="text-[9px] font-bold text-rose-400 dark:text-rose-500/80 uppercase transition-colors">{t("commission")}: -{o.adminCommission?.toFixed(2)}</span>
                       </div>
                     </div>
                   </td>

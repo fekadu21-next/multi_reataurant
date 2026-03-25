@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import { FiEdit, FiTrash2, FiPlus, FiGrid, FiList, FiCheckCircle, FiXCircle, FiTag, FiDollarSign } from "react-icons/fi";
 
 const API_URL = "http://localhost:5000";
-
+import { useTranslation } from "react-i18next";
 export default function Menu() {
+  const { t } = useTranslation();
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const rawRestaurantId = storedUser?.restaurant?.restaurantId;
-
   const restaurantId =
     rawRestaurantId && rawRestaurantId !== "null"
       ? typeof rawRestaurantId === "object"
@@ -115,15 +115,15 @@ export default function Menu() {
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-colors">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            {restaurant?.name || "Restaurant Menu"}
+            {restaurant?.name || t("restaurantMenu")}
           </h1>
-          <p className="text-gray-500 dark:text-slate-400 mt-1 italic">Manage your flavors and pricing</p>
+          <p className="text-gray-500 dark:text-slate-400 mt-1 italic">{t("manageFlavors")}</p>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="bg-orange-50 dark:bg-orange-900/20 px-6 py-3 rounded-xl border border-orange-100 dark:border-orange-900/30 text-center">
             <div className="text-2xl font-bold text-orange-600 dark:text-orange-500">{items.length}</div>
-            <p className="text-[10px] uppercase font-bold text-orange-400 dark:text-orange-600">Total Items</p>
+            <p className="text-[10px] uppercase font-bold text-orange-400 dark:text-orange-600">{t("totalItems")}</p>
           </div>
 
           <button
@@ -134,7 +134,7 @@ export default function Menu() {
             }}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-blue-200 dark:shadow-none transition-all font-semibold"
           >
-            <FiPlus strokeWidth={3} /> Add New Item
+            <FiPlus strokeWidth={3} /> {t("addNewItem")}
           </button>
         </div>
       </div>
@@ -146,13 +146,13 @@ export default function Menu() {
             onClick={() => setViewMode("grid")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${viewMode === "grid" ? "bg-white dark:bg-slate-800 shadow-sm text-blue-600 dark:text-blue-400 font-bold" : "text-gray-500 dark:text-slate-500"}`}
           >
-            <FiGrid /> Grid
+            <FiGrid /> {t("grid")}
           </button>
           <button
             onClick={() => setViewMode("table")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${viewMode === "table" ? "bg-white dark:bg-slate-800 shadow-sm text-blue-600 dark:text-blue-400 font-bold" : "text-gray-500 dark:text-slate-500"}`}
           >
-            <FiList /> Table
+            <FiList /> {t("table")}
           </button>
         </div>
       </div>
@@ -170,7 +170,7 @@ export default function Menu() {
                 )}
                 <div className="absolute top-3 right-3">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm ${item.isAvailable ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
-                    {item.isAvailable ? "Available" : "Sold Out"}
+                    {item.isAvailable ? t("available") : t("soldOut")}
                   </span>
                 </div>
               </div>
@@ -183,7 +183,7 @@ export default function Menu() {
                   <span className="text-sm font-medium">ETB</span> {item.price}
                 </div>
                 <p className="text-xs text-gray-400 dark:text-slate-500 font-medium flex items-center gap-1 uppercase tracking-tighter">
-                  <FiTag /> {item.categoryId?.name || "Uncategorized"}
+                  <FiTag /> {item.categoryId?.name || t("uncategorized")}
                 </p>
 
                 <div className="flex gap-2 pt-4">
@@ -195,7 +195,7 @@ export default function Menu() {
                     }}
                     className="flex-1 flex justify-center items-center gap-2 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-bold text-sm hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white transition-colors"
                   >
-                    <FiEdit size={14} /> Edit
+                    <FiEdit /> {t("edit")}
                   </button>
                   <button
                     onClick={() => handleDelete(item._id)}
@@ -214,11 +214,11 @@ export default function Menu() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
               <tr>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase">Item</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase">Category</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase">Price</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase text-right">Actions</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase">{t("item")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase">{t("category")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase">{t("price")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase">{t("status")}</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 dark:text-slate-500 uppercase text-right">{t("actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
@@ -234,9 +234,9 @@ export default function Menu() {
                   <td className="px-6 py-4 font-bold text-blue-600 dark:text-blue-400">{item.price} ETB</td>
                   <td className="px-6 py-4">
                     {item.isAvailable ? (
-                      <span className="flex items-center gap-1 text-green-600 dark:text-green-500 text-xs font-bold uppercase"><FiCheckCircle /> Available</span>
+                      <span className="flex items-center gap-1 text-green-600 dark:text-green-500 text-xs font-bold uppercase"><FiCheckCircle /> t("available")</span>
                     ) : (
-                      <span className="flex items-center gap-1 text-red-500 dark:text-red-400 text-xs font-bold uppercase"><FiXCircle /> Sold Out</span>
+                      <span className="flex items-center gap-1 text-red-500 dark:text-red-400 text-xs font-bold uppercase"><FiXCircle /> t("soldOut")</span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -261,20 +261,24 @@ export default function Menu() {
           >
             {/* FIXED HEADER */}
             <div className="bg-blue-600 p-5 text-white shrink-0">
-              <h2 className="text-xl font-bold">{editingItem ? "Edit Menu Item" : "Create New Menu Item"}</h2>
-              <p className="text-blue-100 text-xs">Fill in the details below to update your menu</p>
+              <h2 className="text-xl font-bold">{editingItem ? t("editMenuItem") : t("createMenuItem")}</h2>
+              <p className="text-blue-100 text-xs">{t("fillDetails")}</p>
             </div>
 
             {/* SCROLLABLE FORM BODY */}
             <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">Item Name</label>
+                  <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">{t("itemName")}</label>
                   <input className="w-full bg-transparent border-gray-200 dark:border-slate-800 border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 transition-all outline-none text-sm dark:text-white" placeholder="e.g. Special Tibs" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
                 </div>
 
+
+
+                {t("description")}
+                {t("itemPhoto")}
                 <div className="col-span-1">
-                  <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">Category</label>
+                  <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1"> {t("category")}</label>
                   <select className="w-full bg-transparent dark:bg-slate-900 border-gray-200 dark:border-slate-800 border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:text-white" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} required>
                     <option value="" className="dark:bg-slate-900">Select...</option>
                     {categories.map((cat) => <option key={cat._id} value={cat._id} className="dark:bg-slate-900">{cat.name}</option>)}
@@ -282,27 +286,27 @@ export default function Menu() {
                 </div>
 
                 <div className="col-span-1">
-                  <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">Price (ETB)</label>
+                  <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">{t("price")} (ETB)</label>
                   <input type="number" className="w-full bg-transparent border-gray-200 dark:border-slate-800 border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:text-white" placeholder="0.00" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">Description</label>
+                <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">{t("description")}</label>
                 <textarea rows="2" className="w-full bg-transparent border-gray-200 dark:border-slate-800 border rounded-xl p-3 mt-1 focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:text-white" placeholder="Briefly describe this dish..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">Item Photo</label>
+                <label className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase ml-1">{t("itemPhoto")}</label>
                 <div className="mt-1 border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-xl p-3 text-center hover:border-blue-400 transition-colors cursor-pointer relative">
                   <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => setForm({ ...form, image: e.target.files[0] })} />
-                  <p className="text-xs text-gray-500 dark:text-slate-500 truncate px-2">{form.image ? form.image.name : "Click to upload image"}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-500 truncate px-2">{form.image ? form.image.name : t("uploadImage")}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
                 <input type="checkbox" className="w-4 h-4 rounded text-blue-600 border-gray-300 dark:border-slate-700 focus:ring-blue-500" checked={form.isAvailable} onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })} />
-                <span className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-tight">Available in App</span>
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-tight">{t("availableInApp")}</span>
               </div>
             </div>
 
@@ -313,18 +317,18 @@ export default function Menu() {
                 onClick={() => setShowModal(false)}
                 className="px-5 py-2 rounded-xl text-gray-500 dark:text-slate-400 font-bold hover:bg-gray-200 dark:hover:bg-slate-800 transition-all text-sm"
               >
-                Cancel
+                {t("cancel")}
+
               </button>
               <button
                 className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 dark:shadow-none hover:bg-blue-700 transition-all text-sm"
               >
-                {editingItem ? "Save Changes" : "Create Item"}
+                {editingItem ? t("saveChanges") : t("createItem")}
               </button>
             </div>
           </form>
         </div>
       )}
-
       {/* SUCCESS POPUP */}
       {message && (
         <div className="fixed bottom-10 right-10 bg-gray-900 dark:bg-white text-white dark:text-black px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-300 z-[100]">

@@ -3,16 +3,19 @@ import { ThemeContext } from "../context/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaChevronDown, FaGlobe, FaMoon, FaSun, FaBell } from "react-icons/fa";
 import ProfileDropdown from "../components/ProfileDropdown";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
   const [openDropdown, setOpenDropdown] = useState(false);
   const [openNotif, setOpenNotif] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [openLang, setOpenLang] = useState(false); // ✅ added state for language dropdown
 
   const token = localStorage.getItem("token");
 
@@ -49,7 +52,12 @@ const Navbar = () => {
       setNotifications([]);
     }
   };
-
+  // add inside Navbar component
+  const changeLanguage = (lang) => {
+    i18n.changeLanguage(lang);           // change language
+    localStorage.setItem("i18nextLng", lang); // persist selection
+    setOpenLang(false);                  // close dropdown
+  };
   const handleNotificationClick = async (notif) => {
     try {
       if (!notif.isRead) {
@@ -96,8 +104,8 @@ const Navbar = () => {
   return (
     <nav
       className={`sticky top-0 w-full transition-all duration-500 z-50 ${scrolled
-          ? "bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-slate-800 shadow-sm py-3"
-          : "bg-white dark:bg-slate-950 py-5"
+        ? "bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-slate-800 shadow-sm py-3"
+        : "bg-white dark:bg-slate-950 py-5"
         }`}
     >
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 flex items-center justify-between">
@@ -126,7 +134,7 @@ const Navbar = () => {
             <FaSearch className="text-gray-400 mr-4 text-sm" />
             <input
               type="text"
-              placeholder="Search restaurants or dishes..."
+              placeholder={t("searchPlaceholder")}
               className="bg-transparent w-full outline-none text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 font-medium"
             />
           </div>
@@ -135,7 +143,66 @@ const Navbar = () => {
         {/* RIGHT SIDE */}
         <div className="flex items-center gap-5">
           <div className="hidden md:flex items-center gap-5 text-gray-400">
-            <FaGlobe className="hover:text-orange-500 cursor-pointer transition" />
+            <div className="relative">
+              <button
+                onClick={() => setOpenLang(!openLang)}
+                className="group flex items-center justify-center p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-all duration-300"
+              >
+                <FaGlobe className={`text-lg transition-colors duration-300 ${openLang ? 'text-orange-500' : 'text-slate-500 dark:text-slate-400 group-hover:text-orange-500'}`} />
+              </button>
+
+              {/* MODERN LANGUAGE DROPDOWN */}
+              {openLang && (
+                <>
+                  {/* Invisible overlay to close dropdown when clicking outside */}
+                  <div className="fixed inset-0 z-10" onClick={() => setOpenLang(false)} />
+
+                  <div className="absolute right-0 mt-3 w-48 origin-top-right bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-1.5 space-y-1">
+                      {/* English Option */}
+                      <button
+                        onClick={() => changeLanguage("en")}
+                        className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 group 
+              ${i18n.language === "en"
+                            ? "bg-orange-50 dark:bg-orange-500/10 text-orange-600"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600">
+                            EN
+                          </span>
+                          <span className="text-sm font-semibold">English</span>
+                        </div>
+                        {i18n.language === "en" && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                        )}
+                      </button>
+
+                      {/* Amharic Option */}
+                      <button
+                        onClick={() => changeLanguage("am")}
+                        className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 group 
+              ${i18n.language === "am"
+                            ? "bg-orange-50 dark:bg-orange-500/10 text-orange-600"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-[10px] font-bold text-emerald-600">
+                            አማ
+                          </span>
+                          <span className="text-sm font-semibold">አማርኛ</span>
+                        </div>
+                        {i18n.language === "am" && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             <div className="relative group flex items-center">
               {darkMode ? (
                 <FaSun
@@ -149,7 +216,7 @@ const Navbar = () => {
                 />
               )}
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs bg-gray-800 dark:bg-orange-600 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                {darkMode ? "Light Mode" : "Dark Mode"}
+                {darkMode ? t("lightMode") : t("darkMode")}
               </span>
             </div>
           </div>
@@ -160,13 +227,14 @@ const Navbar = () => {
                 onClick={() => navigate("/register")}
                 className="px-5 py-2.5 rounded-2xl border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition"
               >
-                Register
+                {t("register")}
               </button>
+
               <button
                 onClick={() => navigate("/login")}
                 className="px-6 py-2.5 rounded-2xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-all shadow-md"
               >
-                Sign In
+                {t("signIn")}
               </button>
             </div>
           ) : (
@@ -186,7 +254,7 @@ const Navbar = () => {
                 {openNotif && (
                   <div className="absolute right-0 mt-4 w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl z-50">
                     {uniqueUnseenNotifications.length === 0 ? (
-                      <p className="p-4 text-gray-500 dark:text-gray-400 text-sm">No new notifications</p>
+                      <p className="p-4 text-gray-500 dark:text-gray-400 text-sm">{t("noNotifications")}</p>
                     ) : (
                       uniqueUnseenNotifications.map((notif) => {
                         const formattedDate = new Date(notif.createdAt).toLocaleDateString("en-US", {
@@ -210,7 +278,7 @@ const Navbar = () => {
                                 </span>.
                               </p>
                               <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
-                                Please write a review{" "}
+                                {t("writeReview")}{" "}
                                 <a
                                   href="#"
                                   onClick={(e) => {
@@ -219,7 +287,7 @@ const Navbar = () => {
                                   }}
                                   className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
                                 >
-                                  click here
+                                  {t("clickHere")}
                                 </a>
                               </p>
                               <span className="text-xs text-gray-400 dark:text-gray-500 mt-1 font-medium">
@@ -228,7 +296,7 @@ const Navbar = () => {
                             </div>
                             {!notif.isRead && (
                               <span className="text-[10px] bg-red-500 text-white px-2 py-[2px] rounded-full h-fit">
-                                NEW
+                                {t("new")}
                               </span>
                             )}
                           </div>
@@ -247,7 +315,7 @@ const Navbar = () => {
                 >
                   <div className="text-right hidden sm:block">
                     <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold leading-none">
-                      Account
+                      {t("account")}
                     </p>
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-orange-500 transition-colors">
                       {firstName}

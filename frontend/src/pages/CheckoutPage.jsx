@@ -3,12 +3,12 @@ import { useCart } from "../context/CartContext";
 import OtpModal from "../components/OtpModal";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import { useTranslation } from "react-i18next";
 const API_URL = "http://localhost:5000/api";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-
+  const { t } = useTranslation();
   /* ================= CART ================= */
   const { cart, clearCart } = useCart();
 
@@ -84,17 +84,17 @@ export default function CheckoutPage() {
   /* ================= PLACE ORDER ================= */
   const handlePlaceOrder = async () => {
     if (!firstName || !lastName || !phone || !email || !city) {
-      setMessage("Please fill all required billing details");
+      setMessage(t("fillRequired"));;
       return;
     }
 
     if (!restaurantId) {
-      setMessage("Restaurant not selected");
+      setMessage(t("restaurantNotSelected"));
       return;
     }
 
     if (cart.length === 0) {
-      setMessage("Your cart is empty");
+      setMessage(t("cartEmpty"));
       return;
     }
 
@@ -315,7 +315,7 @@ export default function CheckoutPage() {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 font-sans text-[#333]">
       <h1 className="text-[42px] font-normal text-center mb-10 text-[#444]">
-        Checkout
+        {t("checkout")}
       </h1>
 
       {message && (
@@ -360,7 +360,7 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
               <div className="flex flex-col gap-2">
                 <label className="text-[14px] font-bold">
-                  First name <span className="text-red-500">*</span>
+                  {t("firstName")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={firstName}
@@ -369,9 +369,10 @@ export default function CheckoutPage() {
                 />
               </div>
 
+
               <div className="flex flex-col gap-2">
                 <label className="text-[14px] font-bold">
-                  Last name <span className="text-red-500">*</span>
+                  {t("lastName")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={lastName}
@@ -382,7 +383,7 @@ export default function CheckoutPage() {
 
               <div className="flex flex-col gap-2 col-span-full">
                 <label className="text-[14px] font-bold">
-                  Phone <span className="text-red-500">*</span>
+                  {t("phone")}<span className="text-red-500">*</span>
                 </label>
                 <div className="flex border border-gray-200 rounded-full overflow-hidden">
                   <span className="px-6 py-4 border-r border-gray-200 bg-white text-gray-500">
@@ -398,7 +399,7 @@ export default function CheckoutPage() {
 
               <div className="flex flex-col gap-2 col-span-full">
                 <label className="text-[14px] font-bold">
-                  Email address <span className="text-red-500">*</span>
+                  {t("emailAddress")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={email}
@@ -409,7 +410,7 @@ export default function CheckoutPage() {
 
               <div className="flex flex-col gap-2 col-span-full">
                 <label className="text-[14px] font-bold">
-                  Street address (optional)
+                  {t("streetAddressOptional")}
                 </label>
                 <input
                   value={street}
@@ -421,7 +422,7 @@ export default function CheckoutPage() {
 
               <div className="flex flex-col gap-2">
                 <label className="text-[14px] font-bold">
-                  Town / City <span className="text-red-500">*</span>
+                  {t("cityTown")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={city}
@@ -474,7 +475,7 @@ export default function CheckoutPage() {
           <div className="w-full text-[15px] mb-6">
             <div className="flex justify-between font-bold border-b border-gray-200 pb-4 mb-4">
               <span>Product</span>
-              <span>Subtotal</span>
+              <span>{t("subtotal")}</span>
             </div>
 
             <div className="space-y-4">
@@ -554,7 +555,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="flex justify-between text-[18px] font-bold border-t border-gray-200 pt-6">
-              <span>Total</span>
+              <span>{t("total")}</span>
               <span>
                 Br{" "}
                 {total.toLocaleString(undefined, {
@@ -620,11 +621,12 @@ export default function CheckoutPage() {
             className="mt-10 bg-[#ffde00] text-black w-full py-5 rounded-full text-[17px] font-bold hover:bg-black hover:text-white transition-all duration-300 shadow-sm"
           >
             {loading
-              ? "Processing..."
+              ? t("processing")
               : paymentMethod === "CHAPA"
-                ? "Proceed to Chapa"
-                : "Place order"}
+                ? t("proceedToChapa")
+                : t("placeOrder")}
           </button>
+
         </div>
       </div>
 

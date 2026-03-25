@@ -306,10 +306,27 @@ export const markOrdersSeen = async (req, res) => {
 export const getOrders = async (req, res) => {
   try {
     const orders = await Order.find()
+
+      // ✅ Populate customer
       .populate("customerId", "fullname email")
-      .populate("restaurantId", "name");
+
+      // ✅ Populate restaurant
+      .populate("restaurantId", "name")
+
+      // ✅ 🔥 IMPORTANT: Populate items → menuItem → category
+      .populate({
+        path: "items.menuItemId",
+        select: "name price categoryId", // menu item fields
+        populate: {
+          path: "categoryId",
+          select: "name" // category name only
+        }
+      });
+
     res.json(orders);
+
   } catch (error) {
+    console.error("GET ORDERS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

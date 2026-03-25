@@ -114,7 +114,6 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 15,
     },
-
     adminCommission: {
       type: Number,
       required: true,

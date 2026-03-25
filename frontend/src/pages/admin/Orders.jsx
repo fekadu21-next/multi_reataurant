@@ -429,7 +429,7 @@ export default function OrdersPage() {
                             <option disabled value="">Order Status</option>
                             <option value="PENDING">PENDING</option>
                             <option value="CANCELLED">CANCELLED</option>
-                            <option value="DELIVERED">DELIVERED</option>
+                            {/* <option value="DELIVERED">DELIVERED</option> */}
                           </select>
 
                           <select

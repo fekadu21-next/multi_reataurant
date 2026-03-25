@@ -9,10 +9,12 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 const API_URL = "http://localhost:5000";
 
 export default function RestaurantMenu() {
+  const { t } = useTranslation();
   const { id: restaurantId } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -191,7 +193,7 @@ export default function RestaurantMenu() {
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-3">
                   <span className="flex items-center gap-2 bg-orange-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl">
-                    <Award size={14} /> Popular Choice
+                    <Award size={14} /> {t("popularChoice")}
                   </span>
                   <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-1.5 rounded-full text-white">
                     <Star size={14} className="fill-yellow-400 text-yellow-400" />
@@ -228,7 +230,7 @@ export default function RestaurantMenu() {
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search dishes or ingredients..."
+              placeholder={t("searchPlaceholderr")}
               className="w-full bg-gray-50 dark:bg-slate-900 border-2 border-transparent focus:border-orange-500/20 focus:bg-white dark:focus:bg-slate-800 rounded-[2rem] py-5 pl-14 pr-6 font-bold text-gray-800 dark:text-gray-100 transition-all outline-none"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -256,13 +258,15 @@ export default function RestaurantMenu() {
         <div className="flex items-center justify-between mb-16">
           <div>
             <h2 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase">
-              {searchQuery ? "Search Results" : "Chef's Specials"}
+              {searchQuery ? t("searchResults") : t("chefsSpecials")}
             </h2>
-            <p className="text-gray-400 dark:text-gray-500 font-bold mt-1 text-xs uppercase tracking-[0.2em]">Prepared fresh daily</p>
+            <p className="text-gray-400 dark:text-gray-500 font-bold mt-1 text-xs uppercase tracking-[0.2em]">
+              {t("preparedFresh")}
+            </p>
           </div>
           <div className="flex items-center gap-3 bg-orange-50 dark:bg-orange-500/10 px-6 py-3 rounded-2xl border border-orange-100 dark:border-orange-500/20">
             <Flame size={18} className="text-orange-600 dark:text-orange-400" />
-            <span className="text-xs font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest">{filteredItems.length} Available</span>
+            <span className="text-xs font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest"> {filteredItems.length} {t("available")}</span>
           </div>
         </div>
 
@@ -315,7 +319,7 @@ export default function RestaurantMenu() {
                       </p>
                       <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-slate-800">
                         <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                          <Clock size={12} /> 15m Prep
+                          <Clock size={12} /> 15m {t("minsPrep")}
                         </div>
                         <div className="flex items-center gap-1 text-orange-500">
                           <Star size={12} fill="currentColor" />
@@ -335,8 +339,12 @@ export default function RestaurantMenu() {
       <section className="max-w-[1400px] mx-auto px-6 mt-40 pt-32 border-t border-gray-100 dark:border-slate-800">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-20">
           <div>
-            <h2 className="text-2xl font-bold tracking-tighter text-gray-700 dark:text-gray-300 uppercase">Real Feedbacks from customers</h2>
-            <p className="text-gray-400 dark:text-gray-500 mt-2 font-bold text-lg italic tracking-wide">"Simply the best food in town..."</p>
+            <h2 className="text-2xl font-bold tracking-tighter text-gray-700 dark:text-gray-300 uppercase">
+              {t("realFeedbacks")}
+            </h2>
+            <p className="text-gray-400 dark:text-gray-500 mt-2 font-bold text-lg italic tracking-wide">
+              {t("feedbackQuote")}
+            </p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">

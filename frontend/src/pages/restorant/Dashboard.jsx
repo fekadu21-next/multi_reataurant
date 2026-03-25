@@ -13,6 +13,8 @@ import {
   FiClock,
   FiTrendingUp,
   FiAlertTriangle,
+  FiGlobe,
+  FiChevronDown,
 } from "react-icons/fi";
 import axios from "axios";
 
@@ -24,11 +26,12 @@ import Customers from "./Customers";
 import RestaurantSettings from "./RestaurantSettings";
 import SalesAnalytics from "./SalesAnalytics";
 import { ThemeContext } from "../../context/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 const API_URL = "http://localhost:5000";
 
 export default function Dashboard() {
-  // --- FIX: Logic to persist page on refresh ---
+  const { t, i18n } = useTranslation();
   const [activePage, setActivePage] = useState(() => {
     return localStorage.getItem("dashboard_active_tab") || "dashboard";
   });
@@ -38,6 +41,7 @@ export default function Dashboard() {
   const token = localStorage.getItem("token");
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const restaurantId = storedUser?.restaurant?.restaurantId;
+  const [openLang, setOpenLang] = useState(false);
 
   // Save active page to localStorage whenever it changes
   useEffect(() => {
@@ -47,7 +51,7 @@ export default function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    localStorage.removeItem("dashboard_active_tab"); // Reset on logout
+    localStorage.removeItem("dashboard_active_tab");
     window.location.href = "/";
   };
 
@@ -72,57 +76,58 @@ export default function Dashboard() {
       {/* ---------------- Sidebar ---------------- */}
       <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed h-full z-10">
         <div className="p-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-              <FiShoppingBag size={22} />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+              <span className="text-white font-black text-xl">M</span>
             </div>
-            <h1 className="text-xl font-black tracking-tight dark:text-white uppercase">
-              Maraki<span className="text-blue-600">.</span>
-            </h1>
+            <div>
+              <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Mela</h1>
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">Admin Suite</p>
+            </div>
           </div>
         </div>
 
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           <SidebarItem
             icon={<FiHome />}
-            label="Overview"
+            label={t("overview")}
             active={activePage === "dashboard"}
             onClick={() => setActivePage("dashboard")}
           />
           <SidebarItem
             icon={<FiShoppingBag />}
-            label="Menu Items"
+            label={t("menuItems")}
             active={activePage === "menu"}
             onClick={() => setActivePage("menu")}
           />
           <SidebarItem
             icon={<FiClipboard />}
-            label="Orders"
+            label={t("orders")}
             active={activePage === "orders"}
             onClick={() => setActivePage("orders")}
             badge={unseenCount}
           />
           <SidebarItem
             icon={<FiUsers />}
-            label="Customers"
+            label={t("customers")}
             active={activePage === "customers"}
             onClick={() => setActivePage("customers")}
           />
           <SidebarItem
             icon={<FiBarChart />}
-            label="Sales Analytics"
+            label={t("salesAnalytics")}
             active={activePage === "sales"}
             onClick={() => setActivePage("sales")}
           />
           <SidebarItem
             icon={<FiStar />}
-            label="Reviews"
+            label={t("reviews")}
             active={activePage === "reviews"}
             onClick={() => setActivePage("reviews")}
           />
           <SidebarItem
             icon={<FiSettings />}
-            label="Settings"
+            label={t("settings")}
             active={activePage === "settings"}
             onClick={() => setActivePage("settings")}
           />
@@ -134,9 +139,9 @@ export default function Dashboard() {
             className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all font-semibold text-sm"
           >
             {darkMode ? (
-              <><FiSun className="text-yellow-500" /> Light Mode</>
+              <><FiSun /> {t("lightMode")}</>
             ) : (
-              <><FiMoon className="text-indigo-500" /> Night Mode</>
+              <><FiMoon /> {t("nightMode")}</>
             )}
           </button>
 
@@ -144,36 +149,76 @@ export default function Dashboard() {
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 font-semibold text-sm hover:bg-rose-100 dark:hover:bg-rose-900/20 transition-all"
           >
-            <FiLogOut /> Logout
+            <FiLogOut />{t("logout")}
           </button>
         </div>
       </aside>
 
       {/* ---------------- Main Content ---------------- */}
       <main className="flex-1 ml-72 p-8 md:p-12 overflow-y-auto">
-        <header className="flex justify-between items-center mb-10">
+        <header className="flex justify-between items-start mb-10">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {activePage === "dashboard" && "Dashboard Overview"}
-              {activePage === "menu" && "Manage Menu"}
-              {activePage === "orders" && "Active Orders"}
-              {activePage === "customers" && "Customer List"}
-              {activePage === "sales" && "Revenue Analytics"}
-              {activePage === "reviews" && "Customer Feedback"}
-              {activePage === "settings" && "Store Settings"}
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+              {activePage === "dashboard" && t("dashboardOverview")}
+              {activePage === "menu" && t("manageMenu")}
+              {activePage === "orders" && t("activeOrders")}
+              {activePage === "customers" && t("customerList")}
+              {activePage === "sales" && t("revenueAnalytics")}
+              {activePage === "reviews" && t("customerFeedback")}
+              {activePage === "settings" && t("storeSettings")}
             </h2>
             <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
-              Welcome back! Here's what's happening today.
+              {t("welcomeBack")}
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col text-right">
-              <span className="text-sm font-bold dark:text-white">{storedUser?.name || "Restaurant Owner"}</span>
-              <span className="text-xs text-slate-400 font-medium uppercase tracking-widest">Administrator</span>
+          <div className="flex items-center gap-6">
+            {/* 🌐 LANGUAGE SWITCHER (TOP RIGHT) */}
+            <div className="relative">
+              <button
+                onClick={() => setOpenLang(!openLang)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all text-xs font-black tracking-widest uppercase text-slate-600 dark:text-slate-300"
+              >
+                <FiGlobe className="text-blue-600" />
+                {i18n.language === "am" ? "አማርኛ" : "English"}
+                <FiChevronDown className={`transition-transform duration-300 ${openLang ? 'rotate-180' : ''}`} />
+              </button>
+
+              {openLang && (
+                <div className="absolute right-0 mt-3 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <button
+                    onClick={() => {
+                      i18n.changeLanguage("en");
+                      localStorage.setItem("lang", "en");
+                      setOpenLang(false);
+                    }}
+                    className="flex items-center gap-3 w-full text-left px-5 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-white transition-colors border-b border-slate-50 dark:border-slate-800"
+                  >
+                    <span className="text-base">🇺🇸</span> English
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      i18n.changeLanguage("am");
+                      localStorage.setItem("lang", "am");
+                      setOpenLang(false);
+                    }}
+                    className="flex items-center gap-3 w-full text-left px-5 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-white transition-colors"
+                  >
+                    <span className="text-base">🇪🇹</span> አማርኛ
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
-              <span className="text-blue-600 font-black">M</span>
+
+            <div className="flex items-center gap-4 pl-6 border-l border-slate-200 dark:border-slate-800">
+              <div className="hidden md:flex flex-col text-right">
+                <span className="text-sm font-bold dark:text-white">{storedUser?.name || t("restaurantOwner")}</span>
+                <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">{t("administrator")}</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center shadow-sm">
+                <span className="text-blue-600 font-black">M</span>
+              </div>
             </div>
           </div>
         </header>
@@ -194,6 +239,7 @@ export default function Dashboard() {
 
 /* ---------------- DASHBOARD CONTENT ---------------- */
 function DashboardContent({ restaurantId }) {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
@@ -221,7 +267,6 @@ function DashboardContent({ restaurantId }) {
   const today = new Date().toISOString().slice(0, 10);
   const todaysOrders = orders.filter(o => o.createdAt.slice(0, 10) === today);
   const todayRevenue = todaysOrders.reduce((sum, o) => sum + o.totalPrice, 0);
-  const pendingCount = todaysOrders.filter(o => o.orderStatus === "PENDING").length;
   const preparingCount = todaysOrders.filter(o => o.orderStatus === "PREPARING").length;
   const deliveredToday = todaysOrders.filter(o => o.orderStatus === "DELIVERED").length;
 
@@ -229,22 +274,20 @@ function DashboardContent({ restaurantId }) {
 
   return (
     <div className="space-y-8">
-      {/* ===== KPI CARDS ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Daily Orders" value={todaysOrders.length} icon={<FiShoppingBag />} color="blue" />
-        <StatCard title="Today Revenue" value={`ETB ${todayRevenue.toLocaleString()}`} icon={<FiTrendingUp />} color="emerald" />
-        <StatCard title="Pending" value={pendingCount} icon={<FiClock />} color="orange" />
-        <StatCard title="Successful" value={deliveredToday} icon={<FiStar />} color="indigo" />
+        <StatCard title={t("dailyOrders")} value={todaysOrders.length} icon={<FiShoppingBag />} color="blue" />
+        <StatCard title={t("todayRevenue")} value={`ETB ${todayRevenue.toLocaleString()}`} icon={<FiTrendingUp />} color="emerald" />
+        <StatCard title={t("pending")} value={todaysOrders.filter(o => o.orderStatus === "PENDING").length} icon={<FiClock />} color="orange" />
+        <StatCard title={t("successful")} value={deliveredToday} icon={<FiStar />} color="indigo" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* ===== RECENT ORDERS FEED ===== */}
         <div className="lg:col-span-2">
-          <Card title="Order Stream" subtitle="The most recent transactions">
+          <Card title={t("orderStream")} subtitle={t("recentTransactions")} >
             <div className="mt-6 space-y-4">
               {recentOrders.length === 0 ? (
                 <div className="text-center py-10">
-                  <p className="text-slate-400 font-medium italic">No orders recorded for today yet.</p>
+                  <p className="text-slate-400 font-medium italic">{t("noOrdersToday")}.</p>
                 </div>
               ) : (
                 recentOrders.map((o) => (
@@ -254,7 +297,7 @@ function DashboardContent({ restaurantId }) {
                         #{o._id.slice(-3).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-bold text-sm dark:text-white">{o.customerName.firstName} {o.customerName.lastName}</p>
+                        <p className="font-bold text-sm dark:text-white">{o.customerName?.firstName} {o.customerName?.lastName}</p>
                         <p className="text-[10px] uppercase font-black tracking-widest text-slate-400">{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
@@ -273,21 +316,18 @@ function DashboardContent({ restaurantId }) {
             </div>
           </Card>
         </div>
-
-        {/* ===== ALERTS & STATUS ===== */}
         <div className="space-y-6">
-          <Card title="Kitchen Pulse">
+          <Card title={t("kitchenPulse")}>
             <div className="space-y-4 mt-4">
-              <StatusRow label="New Orders" value={todaysOrders.filter(o => !o.isSeen).length} color="blue" />
-              <StatusRow label="In Preparation" value={preparingCount} color="orange" />
-              <StatusRow label="Out for Delivery" value={deliveredToday} color="emerald" />
+              <StatusRow label={t("newOrders")} value={todaysOrders.filter(o => !o.isSeen).length} color="blue" />
+              <StatusRow label={t("inPreparation")} value={preparingCount} color="orange" />
+              <StatusRow label={t("outForDelivery")} value={deliveredToday} color="emerald" />
             </div>
           </Card>
-
           <div className="p-6 rounded-[2rem] bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20">
             <div className="flex items-center gap-2 mb-2">
               <FiAlertTriangle className="text-amber-600" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-amber-800 dark:text-amber-500">Low Stock Alert</h4>
+              <h4 className="text-xs font-black uppercase tracking-widest text-amber-800 dark:text-amber-500">{t("lowStockAlert")}</h4>
             </div>
             <p className="text-sm font-bold text-amber-900/70 dark:text-amber-400/70">Milk, Flour, and Eggs are running low in the inventory.</p>
           </div>

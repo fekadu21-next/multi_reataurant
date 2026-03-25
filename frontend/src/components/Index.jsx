@@ -6,13 +6,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import axios from "axios";
-
+import { useTranslation } from "react-i18next";
 const API_URL = "http://localhost:5000";
 
 export default function Index() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-
+  const { t } = useTranslation();
   const token = localStorage.getItem("token");
 
   const [restaurants, setRestaurants] = useState([]);
@@ -124,7 +124,7 @@ export default function Index() {
             <div className="max-w-3xl">
               <div className="overflow-hidden mb-4">
                 <p className="text-orange-500 font-black tracking-[0.3em] uppercase text-xs">
-                  Premium Delivery Service
+                  {t("premiumDelivery")}
                 </p>
               </div>
               <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.95] tracking-tighter mb-8 transition-all">
@@ -149,8 +149,12 @@ export default function Index() {
                   <FiShoppingBag size={20} />
                 </div>
                 <div className="text-left">
-                  <p className="text-[10px] font-black opacity-50 uppercase tracking-widest">Active Hubs</p>
-                  <p className="font-black text-sm">Select Restaurant</p>
+                  <p className="text-[10px] font-black opacity-50 uppercase tracking-widest">
+                    {t("activeHubs")}
+                  </p>
+                  <p className="font-black text-sm">
+                    {t("selectRestaurant")}
+                  </p>
                 </div>
                 <div className="ml-4 opacity-30">
                   {showRestaurants ? <FiChevronUp /> : <FiChevronDown />}
@@ -206,15 +210,15 @@ export default function Index() {
             <div className="space-y-3">
               <div className="h-1.5 w-16 bg-orange-500 rounded-full" />
               <h2 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter">
-                {token ? "Your recommended foods" : "Addis' Most Popular"}
+                {token ? t("recommendedFoods") : t("popularFoods")}
               </h2>
               <p className="text-gray-400 dark:text-gray-500 font-medium text-lg">
-                {token ? "Smart recommendations based on your unique taste." : "Trending dishes everyone is talking about right now."}
+                {token ? t("recommendedDesc") : t("popularDesc")}
               </p>
             </div>
             <div className="flex gap-3">
               <span className="px-5 py-2 bg-orange-50 dark:bg-slate-800 text-orange-600 dark:text-orange-400 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-orange-100 dark:border-slate-700">
-                {recommendations.length} Items Found
+                {t("itemsFound", { count: recommendations.length })}
               </span>
             </div>
           </div>
@@ -269,11 +273,11 @@ export default function Index() {
           <div className="max-w-[1440px] mx-auto px-8">
             <div className="flex flex-col md:flex-row items-center justify-between mb-20 gap-8">
               <h2 className="text-5xl font-black text-white tracking-tighter">
-                Browse By <span className="text-orange-500 italic">Cuisine</span>
+                {t("browseCuisine")} <span className="text-orange-500 italic">Cuisine</span>
               </h2>
               <div className="h-[1px] flex-1 bg-white/10 mx-10 hidden lg:block" />
               <div className="px-6 py-3 border border-white/20 rounded-full text-white/40 text-[10px] font-black uppercase tracking-widest">
-                Explore Global Flavors
+                {t("exploreFlavors")}
               </div>
             </div>
 
@@ -307,9 +311,9 @@ export default function Index() {
         <div className="max-w-[1440px] mx-auto px-8 pb-32">
           <div className="grid md:grid-cols-3 gap-12">
             {[
-              { icon: <FiTruck />, title: "Lightning Fast", desc: "Average delivery time of 25 minutes across Addis." },
-              { icon: <FiShield />, title: "Secure Payments", desc: "Multi-layered security for all your digital transactions." },
-              { icon: <FiClock />, title: "Live Tracking", desc: "Real-time updates from the kitchen to your doorstep." }
+              { icon: <FiTruck />, title: t("fastDelivery"), desc: "Average delivery time of 25 minutes across Addis." },
+              { icon: <FiShield />, title: t("securePayments"), desc: "Multi-layered security for all your digital transactions." },
+              { icon: <FiClock />, title: t("liveTracking"), desc: "Real-time updates from the kitchen to your doorstep." }
             ].map((feature, i) => (
               <div key={i} className="flex gap-6 items-start p-10 rounded-[40px] bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-orange-500/5 transition-all">
                 <div className="text-5xl text-orange-500 mt-1">{feature.icon}</div>

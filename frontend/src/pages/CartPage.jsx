@@ -3,18 +3,18 @@ import { useCart } from "../context/CartContext";
 import { Plus, Minus, Trash } from "lucide-react";
 import AskQuestionModal from "../components/AskQuestionModal";
 import { useNavigate } from "react-router-dom";
-
+import { useTranslation } from "react-i18next";
 export default function CartPage() {
   const { cart, increaseQty, decreaseQty, removeFromCart } = useCart();
   const [showQuestion, setShowQuestion] = useState(false);
   const navigate = useNavigate();
-
+  const { t } = useTranslation();
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   if (!cart.length) {
     return (
       <div className="p-16 text-center text-2xl font-bold text-black dark:text-white dark:bg-slate-950 min-h-screen">
-        Your cart is empty 🛒
+        {t("cartEmpty")}
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default function CartPage() {
             </h1>
 
             <p className="text-green-600 font-semibold">
-              In stock
+              {t("inStock")}
             </p>
 
             <p className="text-4xl font-bold text-gray-800 dark:text-gray-200">
@@ -93,14 +93,14 @@ export default function CartPage() {
                 onClick={() => navigate("/checkout")}
                 className="bg-yellow-400 text-white px-10 py-3 rounded-full font-bold hover:bg-gray-800 transition"
               >
-                Buy
+                {t("buy")}
               </button>
 
               <button
                 onClick={() => setShowQuestion(true)}
                 className="bg-yellow-300 px-6 py-3 text-white rounded-full font-semibold hover:bg-gray-800 transition"
               >
-                Ask a Question
+                {t("askQuestion")}
               </button>
 
               <button
@@ -117,7 +117,7 @@ export default function CartPage() {
 
       {/* TOTAL */}
       <div className="text-right text-2xl font-bold mt-6 text-black dark:text-white">
-        Total: Br {total.toLocaleString()}
+        {t("total")}: Br {total.toLocaleString()}
       </div>
 
       {showQuestion && (

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FiStar, FiMessageSquare, FiCalendar } from "react-icons/fi";
-
+import { useTranslation } from "react-i18next";
 const API_URL = "http://localhost:5000";
 
 export default function Reviews() {
+  const { t, i18n } = useTranslation();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,8 +50,8 @@ export default function Reviews() {
       {/* HEADER & SUMMARY CARD */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-colors duration-300">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Customer Feedback</h2>
-          <p className="text-gray-500 dark:text-slate-400 mt-1">Manage and monitor your restaurant's reputation</p>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{t("reviewss.title")}</h2>
+          <p className="text-gray-500 dark:text-slate-400 mt-1">{t("reviewss.subtitle")}</p>
         </div>
 
         <div className="flex items-center gap-6 bg-gray-50 dark:bg-slate-800/50 px-6 py-4 rounded-xl border border-gray-100 dark:border-slate-800 transition-colors">
@@ -58,12 +59,12 @@ export default function Reviews() {
             <div className="flex items-center justify-center gap-1 text-2xl font-bold text-gray-900 dark:text-white">
               {avgRating} <FiStar className="text-yellow-400 fill-yellow-400 w-5 h-5" />
             </div>
-            <p className="text-xs text-gray-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Avg Rating</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 uppercase font-semibold tracking-wider">{t("reviewss.avgRating")}</p>
           </div>
           <div className="w-px h-10 bg-gray-200 dark:bg-slate-700"></div>
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{reviews.length}</div>
-            <p className="text-xs text-gray-500 dark:text-slate-400 uppercase font-semibold tracking-wider">Total Reviews</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 uppercase font-semibold tracking-wider">{t("reviewss.totalReviews")}</p>
           </div>
         </div>
       </div>
@@ -73,12 +74,12 @@ export default function Reviews() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-500 dark:text-slate-400 font-medium">Fetching reviews...</p>
+            <p className="text-gray-500 dark:text-slate-400 font-medium">{t("reviewss.loading")}...</p>
           </div>
         ) : reviews.length === 0 ? (
           <div className="text-center py-20 bg-gray-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-800 transition-colors">
             <FiMessageSquare className="mx-auto w-12 h-12 text-gray-300 dark:text-slate-700 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-slate-300">No reviews yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-slate-300">{t("reviewss.noReviews")}</h3>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
@@ -106,7 +107,7 @@ export default function Reviews() {
 
                     <div>
                       <h4 className="font-bold text-gray-900 dark:text-white text-lg leading-tight">
-                        {review.userId?.fullname || "Anonymous Customer"}
+                        {review.userId?.fullname || t("reviewss.anonymous")}
                       </h4>
                       <div className="flex items-center gap-1 mt-1">
                         {[...Array(5)].map((_, i) => (
@@ -140,7 +141,7 @@ export default function Reviews() {
                       <div key={index} className="relative overflow-hidden rounded-lg border border-gray-100 dark:border-slate-800">
                         <img
                           src={`${API_URL}${img}`}
-                          alt="Review attachment"
+                          alt={t("reviewss.attachment")}
                           className="w-14 h-14 object-cover hover:scale-110 transition-transform duration-300 cursor-pointer"
                         />
                       </div>
