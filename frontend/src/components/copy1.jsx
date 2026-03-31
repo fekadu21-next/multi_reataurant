@@ -1,435 +1,352 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  Star, Clock, Plus, Heart, MapPin,
-  ShoppingBag, MessageSquare, ThumbsUp, ThumbsDown,
-  Search, Info, X, ChevronRight, Share2,
-  ArrowLeft, Zap, Filter, Utensils, Award,
-  CheckCircle, Flame
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useCart } from "../context/CartContext";
+import { useState, useEffect, useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
+import { useNavigate, useLocation } from "react-router-dom";
+import { FaSearch, FaChevronDown, FaGlobe, FaMoon, FaSun, FaBell } from "react-icons/fa";
+import ProfileDropdown from "../components/ProfileDropdown";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000";
-
-/**
- * RestaurantMenu Component
- * Optimized for high-engagement food delivery.
- * Features: Instant Checkout, Dish-specific Favorites, and Global Search.
- */
-export default function RestaurantMenu() {
-  const { id: restaurantId } = useParams();
+const Navbar = () => {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const location = useLocation(); // Hook to access current URL
+  const { t, i18n } = useTranslation();
+  const { darkMode, toggleTheme } = useContext(ThemeContext);
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const [openNotif, setOpenNotif] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [openLang, setOpenLang] = useState(false);
+
+  // Search State synced with URL
+  const [searchTerm, setSearchTerm] = useState("");
+
   const token = localStorage.getItem("token");
 
-  // --- UI & DATA STATE ---
-  const [restaurant, setRestaurant] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [menuItems, setMenuItems] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState([]); // Stores both "restaurant" and "dish" types
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  // --- REVIEW & RATING STATE ---
-  const [reviews, setReviews] = useState([]);
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [avgRating, setAvgRating] = useState(0);
-
-  /* =========================================================
-     1. DATA ORCHESTRATION (FETCHING)
-     ========================================================= */
+  /* =============================
+      SEARCH LOGIC
+  ============================== */
+  // Sync the input field with the URL parameter (useful for back/forward navigation)
   useEffect(() => {
-    const fetchFullSuite = async () => {
-      try {
-        setLoading(true);
-        // Step A: Fetch Restaurant Profile
-        const restRes = await fetch(`${API_URL}/api/restaurants/${restaurantId}`);
-        const restData = await restRes.json();
-        if (restData.image && !restData.image.startsWith("http")) {
-          restData.image = `${API_URL}${restData.image}`;
-        }
-        setRestaurant(restData);
+    const params = new URLSearchParams(location.search);
+    setSearchTerm(params.get("search") || "");
+  }, [location.search]);
 
-        // Step B: Fetch Categories
-        const catRes = await fetch(`${API_URL}/api/categories`);
-        const catData = await catRes.json();
-        setCategories(catData);
-        if (catData.length) setActiveCategory(catData[0]._id);
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
 
-        // Step C: Fetch Menu Items
-        const menuRes = await fetch(`${API_URL}/api/menu-items/restaurant/${restaurantId}`);
-        const menuData = await menuRes.json();
-        setMenuItems(Array.isArray(menuData) ? menuData.map(item => ({
-          ...item,
-          image: item.image ? `${API_URL}${item.image}` : "",
-        })) : []);
+    const params = new URLSearchParams(location.search);
+    if (value) {
+      params.set("search", value);
+    } else {
+      params.delete("search");
+    }
 
-        // Step D: Fetch Reviews
-        const revRes = await axios.get(`${API_URL}/api/reviews/restaurant/${restaurantId}`);
-        const revData = revRes.data || [];
-        setReviews(revData);
-        if (revData.length) {
-          const totalScore = revData.reduce((acc, item) => acc + item.rating, 0);
-          setAvgRating((totalScore / revData.length).toFixed(1));
-          setTotalReviews(revData.length);
-        }
+    // Navigate to homepage with the search query if not already there, 
+    // or just update parameters if already on home.
+    navigate({
+      pathname: "/",
+      search: params.toString(),
+    }, { replace: true });
+  };
 
-        setLoading(false);
-      } catch (err) {
-        console.error("Fetch Error:", err);
-        setLoading(false);
+  /* =============================
+      FETCH USER FROM BACKEND
+  ============================== */
+  const fetchUser = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/user/settings", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(res.data.user);
+    } catch (error) {
+      console.log("User fetch error:", error);
+    }
+  };
+
+  /* =============================
+      FETCH USER NOTIFICATIONS
+  ============================== */
+  const fetchNotifications = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/notification", {
+        headers: { Authorization: `Bearer ${token}`, "Cache-Control": "no-cache" },
+      });
+
+      const uniqueNotifications = Array.from(
+        new Map((res.data.notifications || []).map((n) => [n._id, n])).values()
+      );
+
+      setNotifications(uniqueNotifications);
+    } catch (error) {
+      console.log("Notifications fetch error:", error);
+      setNotifications([]);
+    }
+  };
+
+  const changeLanguage = (lang) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem("i18nextLng", lang);
+    setOpenLang(false);
+  };
+
+  const handleNotificationClick = async (notif) => {
+    try {
+      if (!notif.isRead) {
+        await axios.put(
+          `http://localhost:5000/api/notification/${notif._id}/read`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.orderId._id === notif.orderId._id ? { ...n, isRead: true } : n
+          )
+        );
       }
-    };
+      navigate(`/account/myorders?orderId=${notif.orderId._id}`);
+      setOpenNotif(false);
+    } catch (error) {
+      console.log("Error marking notification read:", error);
+    }
+  };
 
-    fetchFullSuite();
-  }, [restaurantId]);
-
-  /* =========================================================
-     2. FAVORITES MANAGEMENT (DISH & RESTAURANT)
-     ========================================================= */
   useEffect(() => {
-    if (token) fetchFavorites();
+    if (token) {
+      fetchUser();
+      fetchNotifications();
+    }
   }, [token]);
 
-  const fetchFavorites = () => {
-    axios.get(`${API_URL}/api/user/favorites`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => setFavorites(res.data.favorites || []))
-      .catch((err) => console.error(err));
-  };
-
-  // Check if a specific dish is liked
-  const isDishFavorite = (itemId) =>
-    favorites.some(f => f.type === "dish" && f.dish?._id === itemId && f.restaurant?._id === restaurantId);
-
-  // Check if the restaurant itself is liked
-  const isRestaurantFavorite = () =>
-    favorites.some(f => f.type === "restaurant" && f.restaurant?._id === restaurantId);
-
-  const handleToggleDishFavorite = async (item) => {
-    if (!token) return navigate("/login");
-    const liked = isDishFavorite(item._id);
-    try {
-      if (!liked) {
-        await axios.post(`${API_URL}/api/user/favorites`,
-          { type: "dish", restaurantId, dishId: item._id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        await axios.delete(`${API_URL}/api/user/favorites`, {
-          headers: { Authorization: `Bearer ${token}` },
-          data: { type: "dish", restaurantId, dishId: item._id },
-        });
-      }
-      fetchFavorites();
-    } catch (e) { console.error("Dish Fav Error", e); }
-  };
-
-  const handleToggleRestaurantFavorite = async () => {
-    if (!token) return navigate("/login");
-    const liked = isRestaurantFavorite();
-    try {
-      if (!liked) {
-        await axios.post(`${API_URL}/api/user/favorites`,
-          { type: "restaurant", restaurantId },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        await axios.delete(`${API_URL}/api/user/favorites`, {
-          headers: { Authorization: `Bearer ${token}` },
-          data: { type: "restaurant", restaurantId },
-        });
-      }
-      fetchFavorites();
-    } catch (e) { console.error("Rest Fav Error", e); }
-  };
-
-  /* =========================================================
-     3. SEARCH & FILTERING LOGIC
-     ========================================================= */
-  const filteredItems = useMemo(() => {
-    return menuItems.filter((item) => {
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = item.categoryId?._id === activeCategory;
-
-      // If searching, search across all categories
-      if (searchQuery.length > 0) return matchesSearch;
-      return matchesCategory;
-    });
-  }, [menuItems, activeCategory, searchQuery]);
-
-  /* =========================================================
-     4. CART & NAVIGATION
-     ========================================================= */
-  const handleAddToCartAndCheckout = (item) => {
-    addToCart(item, restaurantId);
-    navigate("/cart"); // Goes straight to the checkout/cart flow
-  };
-
-  // Header scroll observer
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 80);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  if (!restaurant) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full mb-4" />
-      <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest">Gathering Ingredients...</h2>
-    </div>
+  const firstName = user?.fullname?.split(" ")[0] || "User";
+  const firstLetter = firstName.charAt(0).toUpperCase();
+  const unseenNotifications = notifications.filter((n) => !n.isRead);
+  const uniqueUnseenNotifications = Array.from(
+    new Map(unseenNotifications.map((n) => [n.orderId._id, n])).values()
   );
+  const unreadCount = uniqueUnseenNotifications.length;
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 pb-32">
+    <nav
+      className={`sticky top-0 w-full transition-all duration-500 z-50 ${scrolled
+        ? "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-100 dark:border-slate-800 shadow-md py-2"
+        : "bg-white dark:bg-slate-950 py-4"
+        }`}
+    >
+      <div className="max-w-[1400px] mx-auto px-4 md:px-12">
+        <div className="flex items-center justify-between gap-3">
 
-      {/* --- HERO SECTION --- */}
-      <section className="relative h-[550px] w-full overflow-hidden">
-        <motion.img
-          initial={{ scale: 1.2 }} animate={{ scale: 1 }} transition={{ duration: 1.5 }}
-          src={restaurant.image}
-          className="absolute inset-0 w-full h-full object-cover"
-          alt={restaurant.name}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent">
-          <div className="max-w-[1400px] mx-auto h-full flex flex-col justify-between p-8 md:p-16">
+          {/* --- LOGO --- */}
+          <div
+            onClick={() => navigate("/")}
+            className="flex items-center gap-1 cursor-pointer select-none shrink-0"
+          >
+            <span
+              className="text-xl md:text-3xl font-black text-slate-900 dark:text-white"
+              style={{ fontFamily: "'Abyssinica SIL', serif" }}
+            >
+              ማራኪ
+            </span>
+            <span
+              className="text-orange-500 text-lg md:text-2xl"
+              style={{ fontFamily: "'Pacifico', cursive" }}
+            >
+              Eats
+            </span>
+          </div>
 
-            <div className="flex justify-between items-start">
-              <button onClick={() => navigate(-1)} className="p-4 bg-white/20 backdrop-blur-2xl rounded-3xl text-white hover:bg-orange-500 transition-all border border-white/30">
-                <ArrowLeft size={24} />
-              </button>
-              <button className="p-4 bg-white/20 backdrop-blur-2xl rounded-3xl text-white border border-white/30 hover:bg-white/40">
-                <Share2 size={24} />
-              </button>
+          {/* --- DESKTOP SEARCH BAR (Only LG screen) --- */}
+          <div className="hidden lg:flex flex-1 max-w-md mx-4">
+            <div className="flex items-center w-full bg-gray-100 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 px-5 py-2.5 rounded-2xl border border-gray-100 dark:border-slate-700 focus-within:border-orange-300 transition-all duration-300">
+              <FaSearch className="text-gray-400 mr-3 text-sm" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder={t("searchPlaceholder")}
+                className="bg-transparent w-full outline-none text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 font-medium"
+              />
             </div>
+          </div>
 
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-3">
-                  <span className="flex items-center gap-2 bg-orange-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl">
-                    <Award size={14} /> Popular Choice
-                  </span>
-                  <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-1.5 rounded-full text-white">
-                    <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-black">{avgRating || "4.5"}</span>
-                    <span className="text-[10px] text-white/60 font-bold uppercase">({totalReviews} Reviews)</span>
+          {/* --- RIGHT SIDE ACTIONS --- */}
+          <div className="flex items-center gap-2 md:gap-4">
+
+            {/* Language Selection */}
+            <div className="relative">
+              <button
+                onClick={() => setOpenLang(!openLang)}
+                className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-all"
+              >
+                <FaGlobe className={`text-lg ${openLang ? 'text-orange-500' : 'text-slate-500 dark:text-slate-400'}`} />
+              </button>
+
+              {openLang && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setOpenLang(false)} />
+                  <div className="absolute right-0 mt-3 w-40 origin-top-right bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in zoom-in-95">
+                    <div className="p-1.5 space-y-1">
+                      <button
+                        onClick={() => changeLanguage("en")}
+                        className={`flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${i18n.language === "en" ? "bg-orange-50 text-orange-600" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                      >
+                        English {i18n.language === "en" && <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
+                      </button>
+                      <button
+                        onClick={() => changeLanguage("am")}
+                        className={`flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${i18n.language === "am" ? "bg-orange-50 text-orange-600" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                          }`}
+                      >
+                        አማርኛ {i18n.language === "am" && <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none">{restaurant.name}</h1>
-
-                <div className="flex flex-wrap items-center gap-6 text-white/80 font-bold text-xs uppercase tracking-widest">
-                  <span className="flex items-center gap-2"><Clock size={16} className="text-orange-400" /> 20-30 Mins</span>
-                  <span className="flex items-center gap-2"><MapPin size={16} className="text-orange-400" /> {restaurant.location || "Addis Ababa"}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                {!isRestaurantFavorite() ? (
-                  <button
-                    onClick={handleToggleRestaurantFavorite}
-                    className="flex items-center gap-3 bg-white text-black px-10 py-5 rounded-[2.5rem] font-black hover:bg-orange-50 transition-all active:scale-95 shadow-2xl uppercase tracking-widest text-sm"
-                  >
-                    <ThumbsUp size={20} /> Like Restaurant
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleToggleRestaurantFavorite}
-                    className="flex items-center gap-3 bg-red-500 text-white px-10 py-5 rounded-[2.5rem] font-black hover:bg-red-600 transition-all active:scale-95 shadow-2xl uppercase tracking-widest text-sm"
-                  >
-                    <ThumbsDown size={20} /> Dislike
-                  </button>
-                )}
-              </div>
+                </>
+              )}
             </div>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 md:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-all"
+            >
+              {darkMode ? <FaSun className="text-yellow-400 text-lg" /> : <FaMoon className="text-slate-500 text-lg" />}
+            </button>
+
+            {/* --- AUTH BUTTONS (REGISTER & SIGN IN) --- */}
+            {!token ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate("/register")}
+                  className="px-2.5 md:px-5 py-2 md:py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-xs md:text-sm font-bold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all whitespace-nowrap"
+                >
+                  {t("register")}
+                </button>
+
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-3 md:px-6 py-2 md:py-2.5 rounded-xl bg-orange-500 text-white text-xs md:text-sm font-bold hover:bg-orange-600 transition-all shadow-md active:scale-95 whitespace-nowrap"
+                >
+                  {t("signIn")}
+                </button>
+              </div>
+            ) : (
+              /* --- LOGGED IN USER SECTION --- */
+              <div className="flex items-center gap-2 md:gap-5">
+                {/* Notifications Bell */}
+                <div className="relative">
+                  <div
+                    className="p-2 md:p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer relative transition-all"
+                    onClick={() => setOpenNotif(!openNotif)}
+                  >
+                    <FaBell className="text-slate-600 dark:text-slate-400 text-lg" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full border-2 border-white dark:border-slate-900">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </div>
+
+                  {openNotif && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setOpenNotif(false)} />
+                      <div className="absolute right-[-40px] md:right-0 mt-4 w-[280px] md:w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl z-50">
+                        {uniqueUnseenNotifications.length === 0 ? (
+                          <p className="p-6 text-gray-500 dark:text-gray-400 text-sm text-center font-medium">{t("noNotifications")}</p>
+                        ) : (
+                          uniqueUnseenNotifications.map((notif) => (
+                            <div key={notif._id} className="p-4 border-b border-gray-100 dark:border-slate-800 flex gap-3 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                                <FaBell className="text-orange-500 text-xs" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-xs md:text-sm text-gray-700 dark:text-gray-200 font-medium leading-snug">
+                                  {notif.message.split("has been delivered")[0]} <span className="text-emerald-500 font-bold">delivered</span>.
+                                </p>
+                                <button
+                                  onClick={() => handleNotificationClick(notif)}
+                                  className="text-xs text-blue-600 dark:text-blue-400 font-bold mt-1 hover:underline"
+                                >
+                                  {t("clickHere")}
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Profile Section */}
+                <div className="relative">
+                  <div
+                    className="flex items-center gap-2 cursor-pointer group"
+                    onClick={() => setOpenDropdown(!openDropdown)}
+                  >
+                    <div className="hidden sm:block text-right">
+                      <p className="text-[9px] uppercase tracking-tighter text-gray-400 font-bold leading-none">{t("account")}</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-500 transition-colors">
+                        {firstName}
+                      </p>
+                    </div>
+                    <div className="w-9 h-9 md:w-10 md:h-10 relative">
+                      {user?.profileImage ? (
+                        <img
+                          src={`http://localhost:5000${user.profileImage}`}
+                          alt="Profile"
+                          className="w-full h-full rounded-xl md:rounded-2xl object-cover border border-gray-200 dark:border-slate-700 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-xl md:rounded-2xl bg-orange-500 flex items-center justify-center text-white font-extrabold shadow-sm">
+                          {firstLetter}
+                        </div>
+                      )}
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></span>
+                    </div>
+                  </div>
+
+                  {openDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(false)} />
+                      <div className="absolute top-full right-0 mt-4 w-64 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+                          <ProfileDropdown user={user} onClose={() => setOpenDropdown(false)} />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </section>
 
-      {/* --- SEARCH & CATEGORY BAR --- */}
-      <div className={`sticky top-0 z-[100] transition-all duration-300 ${isScrolled ? "bg-white/90 backdrop-blur-2xl py-4 shadow-xl border-b border-gray-100" : "bg-white py-10"}`}>
-        <div className="max-w-[1400px] mx-auto px-6 flex flex-col lg:flex-row gap-8 items-center">
-
-          <div className="relative w-full lg:w-[450px]">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        {/* --- MOBILE SEARCH BAR (Visible below main row on Mobile) --- */}
+        <div className="mt-3 lg:hidden">
+          <div className="flex items-center w-full bg-gray-100 dark:bg-slate-800 px-4 py-2 rounded-xl border border-transparent focus-within:border-orange-300 focus-within:bg-white dark:focus-within:bg-slate-700 transition-all duration-300">
+            <FaSearch className="text-gray-400 mr-3 text-xs" />
             <input
               type="text"
-              placeholder="Search dishes or ingredients..."
-              className="w-full bg-gray-50 border-2 border-transparent focus:border-orange-500/20 focus:bg-white rounded-[2rem] py-5 pl-14 pr-6 font-bold text-gray-800 transition-all outline-none"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder={t("searchPlaceholder")}
+              className="bg-transparent w-full outline-none text-xs text-gray-700 dark:text-gray-200 placeholder-gray-400"
             />
-          </div>
-
-          <div className="flex-1 flex items-center gap-3 overflow-x-auto no-scrollbar py-2">
-            {categories.map((cat) => (
-              <button
-                key={cat._id}
-                onClick={() => { setActiveCategory(cat._id); setSearchQuery(""); }}
-                className={`whitespace-nowrap px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border-2 ${activeCategory === cat._id && searchQuery === ""
-                    ? "bg-gray-900 text-white border-gray-900 shadow-lg shadow-gray-200"
-                    : "bg-transparent text-gray-400 border-gray-50 hover:border-gray-900 hover:text-gray-900"
-                  }`}
-              >
-                {cat.name}
-              </button>
-            ))}
           </div>
         </div>
       </div>
-
-      {/* --- MENU SECTION --- */}
-      <main className="max-w-[1400px] mx-auto px-6 mt-16">
-        <div className="flex items-center justify-between mb-16">
-          <div>
-            <h2 className="text-4xl font-black tracking-tighter text-gray-900 uppercase">
-              {searchQuery ? "Search Results" : "Chef's Specials"}
-            </h2>
-            <p className="text-gray-400 font-bold mt-1 text-xs uppercase tracking-[0.2em]">Prepared fresh daily</p>
-          </div>
-          <div className="flex items-center gap-3 bg-orange-50 px-6 py-3 rounded-2xl border border-orange-100">
-            <Flame size={18} className="text-orange-600" />
-            <span className="text-xs font-black text-orange-600 uppercase tracking-widest">{filteredItems.length} Available</span>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-            {[1, 2, 3, 4].map(i => <div key={i} className="bg-gray-50 h-[400px] rounded-[3rem] animate-pulse" />)}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">
-            <AnimatePresence mode="popLayout">
-              {filteredItems.map((item) => {
-                const dishLiked = isDishFavorite(item._id);
-                return (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                    key={item._id}
-                    className="group relative flex flex-col bg-white rounded-[3.5rem] border border-gray-50 p-4 hover:shadow-2xl transition-all duration-500"
-                  >
-                    <div className="relative h-72 w-full overflow-hidden rounded-[2.8rem] mb-6 shadow-xl">
-                      <img
-                        src={item.image || "/placeholder.jpg"}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        alt={item.name}
-                      />
-
-                      {/* ACTION BUTTONS ON IMAGE */}
-                      <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                        {/* THE + ICON -> GOES TO CART */}
-                        <button
-                          onClick={() => handleAddToCartAndCheckout(item)}
-                          className="bg-green-500 text-white p-4 rounded-2xl shadow-2xl hover:bg-gray-900 transition-all active:scale-90"
-                        >
-                          <Plus size={24} strokeWidth={3} />
-                        </button>
-
-                        {/* LIKE/DISLIKE DISH ICON */}
-                        <button
-                          onClick={() => handleToggleDishFavorite(item)}
-                          className={`p-4 rounded-2xl shadow-2xl transition-all active:scale-90 ${dishLiked ? "bg-red-500 text-white" : "bg-white text-gray-400 hover:text-red-500"}`}
-                        >
-                          {dishLiked ? <ThumbsDown size={20} /> : <ThumbsUp size={20} />}
-                        </button>
-                      </div>
-
-                      <div className="absolute top-4 left-4">
-                        <span className="bg-white/90 backdrop-blur-xl text-gray-900 text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest shadow-sm">
-                          {item.price} ETB
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="px-4 pb-4">
-                      <h3 className="font-black text-gray-900 text-xl leading-tight mb-2 uppercase tracking-tight group-hover:text-orange-600 transition-colors">{item.name}</h3>
-                      <p className="text-sm text-gray-400 font-medium leading-relaxed line-clamp-2 mb-6">
-                        {item.description || "A delicious house specialty made with the finest seasonal ingredients."}
-                      </p>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                        <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                          <Clock size={12} /> 15m Prep
-                        </div>
-                        <div className="flex items-center gap-1 text-orange-500">
-                          <Star size={12} fill="currentColor" />
-                          <span className="text-[10px] font-black uppercase">Top Rated</span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        )}
-      </main>
-
-      {/* --- REVIEWS SECTION --- */}
-      <section className="max-w-[1400px] mx-auto px-6 mt-40 pt-32 border-t border-gray-100">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-20">
-          <div>
-            <h2 className="text-5xl font-black tracking-tighter text-gray-900 uppercase">Guest Feedback</h2>
-            <p className="text-gray-400 mt-2 font-bold text-lg italic tracking-wide">"Simply the best food in town..."</p>
-          </div>
-          <button className="flex items-center gap-3 bg-gray-900 text-white px-10 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-orange-500 transition-all shadow-2xl">
-            <MessageSquare size={20} /> Add Review
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          {reviews.map((r) => (
-            <div key={r._id} className="bg-gray-50 p-10 rounded-[3rem] border border-transparent hover:border-orange-200 transition-all group">
-              <div className="flex items-center gap-4 mb-8">
-                <img
-                  src={r.userId?.profileImage ? `${API_URL}${r.userId.profileImage}` : "/default-avatar.png"}
-                  className="w-16 h-16 rounded-2xl object-cover ring-4 ring-white shadow-lg"
-                  alt="Reviewer"
-                />
-                <div>
-                  <p className="font-black text-gray-900 text-lg">{r.userId?.fullname || "Verified Guest"}</p>
-                  <div className="flex gap-1 mt-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={14} fill={i < r.rating ? "#f59e0b" : "none"} className={i < r.rating ? "text-yellow-500" : "text-gray-200"} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-gray-500 font-medium leading-relaxed italic text-lg">"{r.comment}"</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* --- QUICK ACTION OVERLAY --- */}
-      <AnimatePresence>
-        {isScrolled && (
-          <motion.div
-            initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[101] w-full max-w-sm px-6"
-          >
-            <button
-              onClick={() => navigate("/cart")}
-              className="w-full bg-gray-900 text-white p-6 rounded-[2.5rem] shadow-3xl flex items-center justify-between hover:scale-105 transition-all group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                  <ShoppingBag size={20} />
-                </div>
-                <span className="font-black uppercase tracking-widest text-xs">Complete Order</span>
-              </div>
-              <ChevronRight size={20} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-    </div>
+    </nav>
   );
-}
+};
+
+export default Navbar;

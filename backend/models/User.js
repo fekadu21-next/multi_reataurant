@@ -76,6 +76,8 @@ const userSchema = new mongoose.Schema(
       recommendedFoods: [{ type: String }],
       cuisineInterest: [{ type: String }],
     },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
 
     restaurant: {
       name: { type: String },

@@ -5,6 +5,7 @@ import { onlineOwners, onlineAdmins } from "../Server.js";
 import { createReviewNotification } from "./notificationController.js";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
 import bcrypt from "bcryptjs";
+import Shipping from "../models/Shipping.js";
 const otpStore = new Map();
 // ✉️ Send OTP email
 export const sendOtp = async (req, res) => {
@@ -72,32 +73,28 @@ export const createOrder = async (req, res) => {
       createAccount,
       password,
       phone,
+      shippingType, // frontend must send selected shipping type
     } = req.body;
 
     if (!items || items.length === 0) {
-      return res.status(400).json({
-        message: "Order items are required",
-      });
+      return res.status(400).json({ message: "Order items are required" });
     }
 
     let customerId = null;
     let finalEmail;
     let finalCustomerName;
     let customerPhone = "Not Provided";
+
     // =====================================================
     // 🔐 IF USER IS LOGGED IN
     // =====================================================
     if (req.user) {
       const user = await User.findById(req.user.id);
-
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
+      if (!user) return res.status(404).json({ message: "User not found" });
 
       customerId = user._id;
       finalEmail = user.email;
 
-      // Split fullname into first & last
       const nameParts = user.fullname.split(" ");
       finalCustomerName = {
         firstName: nameParts[0],
@@ -105,8 +102,6 @@ export const createOrder = async (req, res) => {
       };
 
       customerPhone = user.address?.phone || "Not Provided";
-
-      // ✅ Logged-in users DO NOT need OTP
     }
 
     // =====================================================
@@ -123,10 +118,8 @@ export const createOrder = async (req, res) => {
 
       if (!otpRecord)
         return res.status(400).json({ message: "OTP not found" });
-
       if (!otpRecord.verified)
         return res.status(400).json({ message: "OTP not verified" });
-
       if (Date.now() > otpRecord.expiresAt) {
         otpStore.delete(email);
         return res.status(400).json({ message: "OTP expired" });
@@ -140,34 +133,24 @@ export const createOrder = async (req, res) => {
       // 🆕 CREATE USER IF REQUESTED
       // ============================================
       if (createAccount) {
+        if (!password)
+          return res.status(400).json({ message: "Password is required" });
 
-        if (!password) {
-          return res.status(400).json({
-            message: "Password is required to create account",
-          });
-        }
-
-        // Check if user already exists
         let existingUser = await User.findOne({ email });
-
         if (!existingUser) {
           const hashedPassword = await bcrypt.hash(password, 10);
-
           const newUser = await User.create({
             fullname: `${customerName.firstName} ${customerName.lastName}`,
             email,
             password: hashedPassword,
-
             address: {
               street: deliveryAddress?.street || "",
               city: deliveryAddress?.city || "",
               phone: customerPhone,
             },
           });
-
           customerId = newUser._id;
         } else {
-          // If already exists → just link order
           customerId = existingUser._id;
         }
       }
@@ -176,12 +159,26 @@ export const createOrder = async (req, res) => {
     }
 
     // =====================================================
-    // 💰 Commission Calculation
+    // ✅ FETCH SHIPPING OPTIONS AND COMMISSION
     // =====================================================
-    const commissionPercent = 15;
+    const shippingData = await Shipping.findOne();
+    if (!shippingData) {
+      return res.status(500).json({ message: "Shipping settings not found" });
+    }
+
+    const { shippingOptions, commissionPercent } = shippingData;
+
+    const selectedShipping = shippingOptions.find(
+      (opt) => opt.type === shippingType
+    );
+    if (!selectedShipping)
+      return res.status(400).json({ message: "Invalid shipping option" });
+
+    // =====================================================
+    // 💰 Calculate admin commission and restaurant amount
+    // =====================================================
     const adminCommission = (totalPrice * commissionPercent) / 100;
     const restaurantAmount = totalPrice - adminCommission;
-
 
     // =====================================================
     // 🧾 CREATE ORDER
@@ -201,29 +198,26 @@ export const createOrder = async (req, res) => {
       paymentReference: "",
 
       orderStatus: "PENDING",
-
       isSeen: false,
       adminSeen: false,
 
-      commissionPercent,
       adminCommission,
       restaurantAmount,
 
       deliveryAddress,
       instructions,
+
+      shippingOptions,   // snapshot of all shipping options
+      selectedShipping,  // option selected by customer
     });
 
     // =====================================================
     // 🔔 REALTIME NOTIFICATION
     // =====================================================
     const io = req.app.get("io");
-
     const restaurant = await Restaurant.findById(restaurantId);
     if (restaurant?.ownerId) {
-      const ownerSocketId = onlineOwners.get(
-        restaurant.ownerId.toString()
-      );
-
+      const ownerSocketId = onlineOwners.get(restaurant.ownerId.toString());
       if (ownerSocketId) {
         io.to(ownerSocketId).emit("newOrder", {
           orderId: order._id,
@@ -237,7 +231,6 @@ export const createOrder = async (req, res) => {
       message: "Order created successfully",
       orderId: order._id,
     });
-
   } catch (error) {
     console.error("Create order error:", error);
     return res.status(500).json({
@@ -263,7 +256,6 @@ export const getAdminUnseenCount = async (req, res) => {
     });
   }
 };
-
 // ------------------ Mark admin notifications as seen ------------------
 export const markAdminSeen = async (req, res) => {
   try {
@@ -322,12 +314,10 @@ export const getUnseenOrdersCount = async (req, res) => {
       .json({ message: "Server error", error: error.message });
   }
 };
-
 /* ================= MARK ALL ORDERS AS SEEN ================= */
 export const markOrdersSeen = async (req, res) => {
   try {
     const restaurantId = req.params.restaurantId;
-
     await Order.updateMany(
       { restaurantId, isSeen: false },
       { $set: { isSeen: true } },

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react"; // Modern Icons
+import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -9,15 +9,15 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // Toggle state
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   const handleLogin = async (e) => {
+    console.log("LOGIN CLICKED");
     e.preventDefault();
     setLoading(true);
     setMessage("");
-
     try {
       const res = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
@@ -26,7 +26,10 @@ export default function Login() {
       });
 
       const data = await res.json();
-
+      console.log("FULL LOGIN RESPONSE:", data);
+      console.log("USER OBJECT:", data.user);
+      console.log("RESTAURANT:", data.user?.restaurant);
+      console.log("IMAGE:", data.user?.restaurant?.image);
       if (!res.ok) {
         setMessage(data.message || t("loginFailed"));
       } else {
@@ -47,19 +50,14 @@ export default function Login() {
     }
     setLoading(false);
   };
-
   return (
     <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center px-4 transition-colors duration-300 dark:bg-black/70">
       <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
-
         {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
             {t("login")}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
-           
-          </p>
         </div>
 
         {/* Error Message */}
@@ -84,27 +82,38 @@ export default function Login() {
           </div>
 
           {/* Password Field */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder={t("password")}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all dark:text-white"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+          <div className="space-y-2">
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder={t("password")}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all dark:text-white"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            {/* Forgot Password Link - Positioned clearly below input */}
+            <div className="flex justify-end px-1">
+              <a
+                href="/forgot-password"
+                className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              >
+                {t("forgotPassword") || "Forgot Password?"}
+              </a>
+            </div>
           </div>
 
-          {/* Buttons */}
-          {/* Buttons */}
+          {/* Buttons Side by Side */}
           <div className="flex flex-row gap-4 pt-4">
             <button
               type="submit"

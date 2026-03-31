@@ -5,7 +5,6 @@ import {
   FiClipboard,
   FiUsers,
   FiBarChart,
-  FiSettings,
   FiLogOut,
   FiStar,
   FiMoon,
@@ -15,21 +14,22 @@ import {
   FiAlertTriangle,
   FiGlobe,
   FiChevronDown,
+  FiUser,
+  FiBriefcase,
+  FiMenu,
+  FiX,
 } from "react-icons/fi";
 import axios from "axios";
-
-// Components (Assuming correct paths)
 import Menu from "./Menu";
 import Orders from "./Orders";
 import Reviews from "./Reviews";
 import Customers from "./Customers";
 import RestaurantSettings from "./RestaurantSettings";
+import ProfileSettings from "./Myprofile";
 import SalesAnalytics from "./SalesAnalytics";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
-
 const API_URL = "http://localhost:5000";
-
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const [activePage, setActivePage] = useState(() => {
@@ -37,17 +37,18 @@ export default function Dashboard() {
   });
   const [unseenCount, setUnseenCount] = useState(0);
   const { darkMode, toggleTheme } = useContext(ThemeContext);
-
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const token = localStorage.getItem("token");
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  // Dynamic Restaurant Data
   const restaurantId = storedUser?.restaurant?.restaurantId;
+  const restaurantName = storedUser?.restaurant?.name || "My Restaurant";
+  const restaurantImage = storedUser?.restaurant?.image; // Assuming image URL is stored here
+  const adminName = storedUser?.name || "Admin";
   const [openLang, setOpenLang] = useState(false);
-
-  // Save active page to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("dashboard_active_tab", activePage);
   }, [activePage]);
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -71,66 +72,107 @@ export default function Dashboard() {
     fetchUnseen();
   }, [restaurantId, token]);
 
+  const navigateTo = (page) => {
+    setActivePage(page);
+    setIsSidebarOpen(false);
+  };
   return (
-    <div className="flex w-full min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
+    <div className="flex w-full min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300 font-sans relative">
+      {/* ---------------- Mobile Overlay ---------------- */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
       {/* ---------------- Sidebar ---------------- */}
-      <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed h-full z-10">
-        <div className="p-8">
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 
+        flex flex-col transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+        lg:translate-x-0 lg:static lg:h-screen
+      `}>
+        <div className="p-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
-              <span className="text-white font-black text-xl">M</span>
+            {/* Dynamic Restaurant Logo/Icon */}
+            <div className="w-12 h-12 rounded-2xl bg-indigo-600 overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-600/20 border border-indigo-100 dark:border-slate-700">
+              {restaurantImage ? (
+                <img
+                  src={`${API_URL}/uploads/${restaurantImage}`}
+                  alt={restaurantName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-white font-black text-xl">
+                  {restaurantName.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
-            <div>
-              <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Mela</h1>
-              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">Admin Suite</p>
+            <div className="truncate max-w-[140px]">
+              <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none truncate">
+                {restaurantName}
+              </h1>
+              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1">Admin Suite</p>
             </div>
           </div>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">
+            <FiX size={24} />
+          </button>
         </div>
-
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
           <SidebarItem
             icon={<FiHome />}
             label={t("overview")}
             active={activePage === "dashboard"}
-            onClick={() => setActivePage("dashboard")}
+            onClick={() => navigateTo("dashboard")}
           />
           <SidebarItem
             icon={<FiShoppingBag />}
             label={t("menuItems")}
             active={activePage === "menu"}
-            onClick={() => setActivePage("menu")}
+            onClick={() => navigateTo("menu")}
           />
           <SidebarItem
             icon={<FiClipboard />}
             label={t("orders")}
             active={activePage === "orders"}
-            onClick={() => setActivePage("orders")}
+            onClick={() => navigateTo("orders")}
             badge={unseenCount}
           />
           <SidebarItem
             icon={<FiUsers />}
             label={t("customers")}
             active={activePage === "customers"}
-            onClick={() => setActivePage("customers")}
+            onClick={() => navigateTo("customers")}
           />
           <SidebarItem
             icon={<FiBarChart />}
             label={t("salesAnalytics")}
             active={activePage === "sales"}
-            onClick={() => setActivePage("sales")}
+            onClick={() => navigateTo("sales")}
           />
           <SidebarItem
             icon={<FiStar />}
             label={t("reviews")}
             active={activePage === "reviews"}
-            onClick={() => setActivePage("reviews")}
+            onClick={() => navigateTo("reviews")}
           />
-          <SidebarItem
-            icon={<FiSettings />}
-            label={t("settings")}
-            active={activePage === "settings"}
-            onClick={() => setActivePage("settings")}
-          />
+
+          <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
+            <p className="px-5 mb-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t("settings")}</p>
+            <SidebarItem
+              icon={<FiBriefcase />}
+              label={t("restaurantSettings")}
+              active={activePage === "settings_restaurant"}
+              onClick={() => navigateTo("settings_restaurant")}
+            />
+            <SidebarItem
+              icon={<FiUser />}
+              label={t("myProfile")}
+              active={activePage === "settings_profile"}
+              onClick={() => navigateTo("settings_profile")}
+            />
+          </div>
         </nav>
 
         <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
@@ -155,31 +197,42 @@ export default function Dashboard() {
       </aside>
 
       {/* ---------------- Main Content ---------------- */}
-      <main className="flex-1 ml-72 p-8 md:p-12 overflow-y-auto">
-        <header className="flex justify-between items-start mb-10">
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-              {activePage === "dashboard" && t("dashboardOverview")}
-              {activePage === "menu" && t("manageMenu")}
-              {activePage === "orders" && t("activeOrders")}
-              {activePage === "customers" && t("customerList")}
-              {activePage === "sales" && t("revenueAnalytics")}
-              {activePage === "reviews" && t("customerFeedback")}
-              {activePage === "settings" && t("storeSettings")}
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
-              {t("welcomeBack")}
-            </p>
+      <main className="flex-1 min-h-screen bg-[#F8FAFC] dark:bg-[#020617] p-4 md:p-8 lg:p-12 overflow-y-auto">
+
+        {/* Mobile Header */}
+        <header className="flex flex-col md:flex-row justify-between items-start mb-10 gap-6">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-600 dark:text-white shadow-sm"
+            >
+              <FiMenu size={24} />
+            </button>
+
+            <div>
+              <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+                {activePage === "dashboard" && t("dashboardOverview")}
+                {activePage === "menu" && t("manageMenu")}
+                {activePage === "orders" && t("activeOrders")}
+                {activePage === "customers" && t("customerList")}
+                {activePage === "sales" && t("revenueAnalytics")}
+                {activePage === "reviews" && t("customerFeedback")}
+                {activePage === "settings_restaurant" && t("storeSettings")}
+                {activePage === "settings_profile" && t("adminProfile")}
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-xs md:text-sm mt-1">
+                {t("welcomeBack")}, {adminName}
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            {/* 🌐 LANGUAGE SWITCHER (TOP RIGHT) */}
+          <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-6">
             <div className="relative">
               <button
                 onClick={() => setOpenLang(!openLang)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all text-xs font-black tracking-widest uppercase text-slate-600 dark:text-slate-300"
+                className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all text-[10px] md:text-xs font-black tracking-widest uppercase text-slate-600 dark:text-slate-300"
               >
-                <FiGlobe className="text-blue-600" />
+                <FiGlobe className="text-indigo-600" />
                 {i18n.language === "am" ? "አማርኛ" : "English"}
                 <FiChevronDown className={`transition-transform duration-300 ${openLang ? 'rotate-180' : ''}`} />
               </button>
@@ -196,7 +249,6 @@ export default function Dashboard() {
                   >
                     <span className="text-base">🇺🇸</span> English
                   </button>
-
                   <button
                     onClick={() => {
                       i18n.changeLanguage("am");
@@ -211,25 +263,33 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="flex items-center gap-4 pl-6 border-l border-slate-200 dark:border-slate-800">
-              <div className="hidden md:flex flex-col text-right">
-                <span className="text-sm font-bold dark:text-white">{storedUser?.name || t("restaurantOwner")}</span>
+            <div className="flex items-center gap-3 md:gap-4 pl-4 md:pl-6 border-l border-slate-200 dark:border-slate-800">
+              <div className="hidden sm:flex flex-col text-right">
+                <span className="text-sm font-bold dark:text-white truncate max-w-[120px]">{adminName}</span>
                 <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">{t("administrator")}</span>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center shadow-sm">
-                <span className="text-blue-600 font-black">M</span>
+              {/* Profile Image / Initials */}
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/30 overflow-hidden flex items-center justify-center shadow-sm">
+                {restaurantImage ? (
+                  <img src={restaurantImage} alt="profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-indigo-600 font-black">
+                    {adminName[0].toUpperCase()}
+                  </span>
+                )}
               </div>
             </div>
           </div>
         </header>
 
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
           {activePage === "dashboard" && <DashboardContent restaurantId={restaurantId} />}
           {activePage === "menu" && <Menu />}
           {activePage === "orders" && <Orders onSeen={() => setUnseenCount(0)} />}
           {activePage === "reviews" && <Reviews />}
           {activePage === "customers" && <Customers />}
-          {activePage === "settings" && <RestaurantSettings />}
+          {activePage === "settings_restaurant" && <RestaurantSettings />}
+          {activePage === "settings_profile" && <ProfileSettings />}
           {activePage === "sales" && <SalesAnalytics restaurantId={restaurantId} />}
         </div>
       </main>
@@ -260,7 +320,7 @@ function DashboardContent({ restaurantId }) {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600"></div>
+      <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-indigo-600"></div>
     </div>
   );
 
@@ -274,7 +334,7 @@ function DashboardContent({ restaurantId }) {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title={t("dailyOrders")} value={todaysOrders.length} icon={<FiShoppingBag />} color="blue" />
         <StatCard title={t("todayRevenue")} value={`ETB ${todayRevenue.toLocaleString()}`} icon={<FiTrendingUp />} color="emerald" />
         <StatCard title={t("pending")} value={todaysOrders.filter(o => o.orderStatus === "PENDING").length} icon={<FiClock />} color="orange" />
@@ -291,9 +351,9 @@ function DashboardContent({ restaurantId }) {
                 </div>
               ) : (
                 recentOrders.map((o) => (
-                  <div key={o._id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all">
+                  <div key={o._id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500">
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs shrink-0">
                         #{o._id.slice(-3).toUpperCase()}
                       </div>
                       <div>
@@ -301,7 +361,7 @@ function DashboardContent({ restaurantId }) {
                         <p className="text-[10px] uppercase font-black tracking-widest text-slate-400">{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2">
                       <p className="font-black text-slate-900 dark:text-white text-sm">ETB {o.totalPrice.toLocaleString()}</p>
                       <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${o.orderStatus === "DELIVERED" ? "border-emerald-200 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/10" :
                         o.orderStatus === "CANCELLED" ? "border-rose-200 text-rose-600 bg-rose-50 dark:bg-rose-900/10" :
@@ -344,12 +404,12 @@ function SidebarItem({ icon, label, active, onClick, badge }) {
     <button
       onClick={onClick}
       className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all group ${active
-        ? "bg-blue-600 text-white shadow-xl shadow-blue-600/20"
+        ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20"
         : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
         }`}
     >
       <div className="flex items-center gap-4">
-        <span className={`text-xl ${active ? "text-white" : "text-slate-400 group-hover:text-blue-500"}`}>{icon}</span>
+        <span className={`text-xl ${active ? "text-white" : "text-slate-400 group-hover:text-indigo-500"}`}>{icon}</span>
         <span className="font-bold text-sm tracking-tight">{label}</span>
       </div>
       {badge > 0 && (
@@ -374,14 +434,14 @@ function StatCard({ title, value, icon, color }) {
         {icon}
       </div>
       <p className="text-slate-400 dark:text-slate-500 font-black text-[10px] uppercase tracking-widest">{title}</p>
-      <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{value}</h2>
+      <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mt-1">{value}</h2>
     </div>
   );
 }
 
 function Card({ children, title, subtitle }) {
   return (
-    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm h-full">
       {title && (
         <div className="mb-2">
           <h3 className="text-lg font-black tracking-tight dark:text-white">{title}</h3>

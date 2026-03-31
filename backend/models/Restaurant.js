@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const restaurantSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -20,11 +19,10 @@ const restaurantSchema = new mongoose.Schema(
     rating: { type: Number, default: 0 },
     deliveryFee: { type: Number, default: 0 },
     deliveryTime: { type: String },
-    description: { type: String }, // New: restaurant description
-    image: { type: String }, // New: image filename/path
+    description: { type: String },
+    image: { type: String },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true },
 );
-
 export default mongoose.model("Restaurant", restaurantSchema);

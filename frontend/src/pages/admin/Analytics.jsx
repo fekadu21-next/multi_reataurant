@@ -10,7 +10,7 @@ import {
   ArrowUpRight, LayoutDashboard, Download, RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { useTranslation } from "react-i18next";
 const API_BASE_URL = "http://localhost:5000";
 /* ================= THEME CONSTANTS ================= */
 const COLORS = {
@@ -22,6 +22,7 @@ const COLORS = {
   chart: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
 };
 export default function Analytics() {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState("ALL");
@@ -143,11 +144,10 @@ export default function Analytics() {
             <div className="p-2 bg-blue-600 rounded-lg">
               <LayoutDashboard className="text-white w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-black tracking-tight uppercase">Admin Console</h1>
+            <h1 className="text-3xl font-black tracking-tight uppercase">{t("adminConsole")}</h1>
           </div>
           <p className="text-slate-500 dark:text-slate-400 font-medium">
-            System-wide performance & resource allocation
-          </p>
+            {t("systemPerformance")} </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -159,7 +159,7 @@ export default function Analytics() {
               onChange={(e) => setSelectedRestaurant(e.target.value)}
               className="pl-10 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-semibold text-sm cursor-pointer"
             >
-              <option value="ALL">All Restaurants</option>
+              <option value="ALL">{t("allRestaurants")}</option>
               {restaurants.map((r) => (
                 <option key={r._id} value={r._id}>{r.name}</option>
               ))}
@@ -175,9 +175,9 @@ export default function Analytics() {
               onChange={(e) => setTimeRange(e.target.value)}
               className="pl-10 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-semibold text-sm cursor-pointer"
             >
-              <option>Last 24 Hours</option>
-              <option>Last 7 Days</option>
-              <option>Last 30 Days</option>
+              <option>{t("last24Hours")}</option>
+              <option>{t("last7Days")}</option>
+              <option>{t("last30Days")}</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           </div>
@@ -191,28 +191,28 @@ export default function Analytics() {
       {/* --- KPI CARDS --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <KPIItem
-          title="Gross Revenue"
+          title={t("grossRevenue")}
           value={`Br ${stats.revenue.toLocaleString()}`}
           icon={<DollarSign className="w-6 h-6" />}
           trend="+12.5%"
           color="blue"
         />
         <KPIItem
-          title="Total Orders"
+          title={t("totalOrders")}
           value={stats.count}
           icon={<ShoppingBag className="w-6 h-6" />}
           trend="+8.2%"
           color="emerald"
         />
         <KPIItem
-          title="Avg. Ticket"
+          title={t("avgTicket")}
           value={`Br ${stats.avg}`}
           icon={<TrendingUp className="w-6 h-6" />}
           trend="-2.1%"
           color="amber"
         />
         <KPIItem
-          title="Customers"
+          title={t("customers")}
           value={stats.customers}
           icon={<Users className="w-6 h-6" />}
           trend="+14.0%"
@@ -232,9 +232,9 @@ export default function Analytics() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-xl font-black flex items-center gap-2 uppercase tracking-tight">
-                Financial Trajectory <ArrowUpRight className="text-emerald-500 w-5 h-5" />
+                {t("financialTrajectory")}<ArrowUpRight className="text-emerald-500 w-5 h-5" />
               </h2>
-              <p className="text-sm text-slate-400 font-medium">Daily revenue accumulation</p>
+              <p className="text-sm text-slate-400 font-medium">{t("dailyRevenue")}</p>
             </div>
             <RefreshCw className="w-4 h-4 text-slate-300 cursor-pointer hover:rotate-180 transition-transform duration-500" />
           </div>
@@ -291,8 +291,8 @@ export default function Analytics() {
           className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col"
         >
           <div className="mb-6">
-            <h2 className="text-xl font-black uppercase tracking-tight">Category Mix</h2>
-            <p className="text-sm text-slate-400 font-medium">Demand by food group</p>
+            <h2 className="text-xl font-black uppercase tracking-tight">{t("categoryMix")}</h2>
+            <p className="text-sm text-slate-400 font-medium">{t("demandByFood")}</p>
           </div>
 
           <div className="flex-1 min-h-[300px] relative">
@@ -331,7 +331,7 @@ export default function Analytics() {
 
             {/* Center Content */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Total</span>
+              <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t("total")}</span>
               <span className="text-3xl font-black">
                 {CATEGORY_DATA.reduce((a, b) => a + b.value, 0)}
               </span>
@@ -360,21 +360,21 @@ export default function Analytics() {
         <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-              <Award className="text-amber-500" /> Elite Performing Items
+              <Award className="text-amber-500" /> {t("eliteItems")}
             </h2>
-            <p className="text-sm text-slate-400 font-medium mt-1">Products driving the most volume</p>
+            <p className="text-sm text-slate-400 font-medium mt-1">{t("topProducts")}</p>
           </div>
-          <button className="text-xs font-bold text-blue-600 hover:underline">View All Inventory</button>
+          <button className="text-xs font-bold text-blue-600 hover:underline">{t("viewInventory")}</button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-400 text-[10px] uppercase font-black tracking-[0.2em]">
-                <th className="px-8 py-5">Product Details</th>
-                <th className="px-8 py-5">Popularity Score</th>
-                <th className="px-8 py-5">Units Sold</th>
-                <th className="px-8 py-5 text-right">Gross Revenue</th>
+                <th className="px-8 py-5">{t("productDetails")}</th>
+                <th className="px-8 py-5">{t("popularityScore")}</th>
+                <th className="px-8 py-5">{t("unitsSold")}</th>
+                <th className="px-8 py-5 text-right">{t("grossRevenueTable")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -406,7 +406,7 @@ export default function Analytics() {
                     </td>
                     <td className="px-8 py-5">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        {d.sales} Qty
+                        {d.sales} {t("qty")}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">

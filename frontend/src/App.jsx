@@ -5,35 +5,30 @@ import {
   Route,
   useLocation,
 } from "react-router-dom";
-
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-
 import Index from "./components/Index";
 import RestaurantMenu from "./components/RestaurantMenu";
-
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
-
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import RestaurantDashboard from "./pages/restorant/Dashboard";
-
 import OrdersPageAccount from "./pages/account/OrdersPage";
 import FavoritesPage from "./pages/account/FavoritesPage";
 import AccountSettingsPage from "./pages/account/AccountSettingsPage";
-
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
 import CheckoutPage from "./pages/CheckoutPage";
-// import PaymentPage from "./pages/PaymentPage";
-// import PaymentPage from "./pages/PaymentPage";
-// import PaymentPage from "./pages/PaymentRedirect";
 import PaymentSuccess from "./pages/PaymentSuccess";
-
 import "./App.css";
 import { CartProvider } from "./context/CartContext";
 import { SocketProvider } from "./context/SocketContext";
-
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import About from "./components/About";
+import Contact from "./components/Contact"
+import Services from "./components/Services"
+import Restaurants from "./components/Restaurants"
 function LayoutWrapper({ children }) {
   const location = useLocation();
 
@@ -67,7 +62,13 @@ export default function App() {
               <Route path="/account/myorders" element={<OrdersPageAccount />} />
               <Route path="/account/favorites" element={<FavoritesPage />} />
               <Route path="/account" element={<AccountSettingsPage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/restaurants" element={<Restaurants />} />
 
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
 
               {/* Cart + Checkout */}
               <Route path="/cart" element={<CartPage />} />

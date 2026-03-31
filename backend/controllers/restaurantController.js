@@ -101,7 +101,6 @@ export const getRestaurantById = async (req, res) => {
     const restaurant = await Restaurant.findById(req.params.id);
     if (!restaurant)
       return res.status(404).json({ message: "Restaurant not found" });
-
     res.json({
       ...restaurant._doc,
       image: restaurant.image ? `/uploads/${restaurant.image}` : "",

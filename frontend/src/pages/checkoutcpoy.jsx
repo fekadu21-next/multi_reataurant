@@ -1,438 +1,95 @@
-import React, { useState } from "react";
-import { useCart } from "../context/CartContext";
-import OtpModal from "../components/OtpModal";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Index from "./components/Index";
+import RestaurantMenu from "./components/RestaurantMenu";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import RestaurantDashboard from "./pages/restorant/Dashboard";
+import OrdersPageAccount from "./pages/account/OrdersPage";
+import FavoritesPage from "./pages/account/FavoritesPage";
+import AccountSettingsPage from "./pages/account/AccountSettingsPage";
+import CartPage from "./pages/CartPage";
+import OrdersPage from "./pages/OrdersPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import "./App.css";
+import { CartProvider } from "./context/CartContext";
+import { SocketProvider } from "./context/SocketContext";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import About from "./components/About";
+import Contact from "./components/Contact"
+import Services from "./components/Services"
+import Restaurants from "./components/Restaurants"
+function LayoutWrapper({ children }) {
+  const location = useLocation();
 
-const API_URL = "http://localhost:5000/api";
+  const dashboardRoutes = [
+    "/admin-dashboard",
+    "/restaurant-dashboard",
+    "/customer-dashboard",
+  ];
 
-export default function CheckoutPage() {
-  const { cart, clearCart } = useCart();
-  const navigate = useNavigate();
-
-  const [paymentMethod, setPaymentMethod] = useState("BANK");
-  const [shipping, setShipping] = useState(200);
-
-  /* ====== BILLING INFO STATE ====== */
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [street, setStreet] = useState("");
-  const [city, setCity] = useState("");
-
-  /* ====== ACCOUNT CREATION STATE ====== */
-  const [createAccount, setCreateAccount] = useState(false);
-  const [password, setPassword] = useState("");
-
-  /* ====== OTHER STATES ====== */
-  const [showOtp, setShowOtp] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [transactionRef, setTransactionRef] = useState("");
-  const [message, setMessage] = useState(""); // inline messages
-
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
-  const total = subtotal + shipping;
-
-  /* ===================== DYNAMIC CART MESSAGE ===================== */
-  let cartMessage = "";
-  if (cart.length === 1) {
-    cartMessage = `"${cart[0].name}" has been added to your cart.`;
-  } else if (cart.length > 1) {
-    cartMessage = `${cart.length} items have been added to your cart.`;
-  }
-
-  /* ===================== PLACE ORDER FUNCTION ===================== */
-  const handlePlaceOrder = async () => {
-    if (!firstName || !lastName || !phone || !email || !city) {
-      setMessage("Please fill all required billing details");
-      return;
-    }
-
-    if (cart.length === 0) {
-      setMessage("Your cart is empty");
-      return;
-    }
-
-    setMessage("");
-    setLoading(true);
-
-    try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.post(
-        `${API_URL}/orders`,
-        {
-          restaurantId: cart[0].restaurantId,
-          items: cart.map((item) => ({
-            menuItemId: item.menuItemId,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          totalPrice: total,
-          paymentMethod: paymentMethod === "COD" ? "COD" : "TELEBIRR",
-          customerPhone: phone,
-          deliveryAddress: { street, city },
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        },
-      );
-
-      // CASH ON DELIVERY → NO OTP
-      if (paymentMethod === "COD") {
-        setMessage("Cash on Delivery order placed successfully!");
-        clearCart();
-        navigate("/orders");
-        return;
-      }
-
-      // BANK / TELEBIRR → OTP REQUIRED
-      setTransactionRef(res.data.order._id);
-      setShowOtp(true);
-      setMessage("OTP sent to your phone to confirm payment");
-    } catch (err) {
-      console.error(err);
-      setMessage(err.response?.data?.message || "Payment initiation failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ===================== VERIFY OTP FUNCTION ===================== */
-  const handleVerifyOtp = async (otp) => {
-    setMessage("");
-    setLoading(true);
-
-    try {
-      await axios.post(`${API_URL}/payments/confirm`, {
-        orderId: transactionRef,
-        otp,
-      });
-
-      setMessage("Payment confirmed! Order sent to restaurant.");
-      setShowOtp(false);
-      clearCart();
-      navigate("/orders");
-    } catch (err) {
-      console.error(err);
-      setMessage(err.response?.data?.message || "OTP verification failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const hideLayout = dashboardRoutes.includes(location.pathname);
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 font-sans text-[#333]">
-      {/* TITLE */}
-      <h1 className="text-[42px] font-normal text-center mb-10 text-[#444]">
-        Checkout
-      </h1>
-
-      {/* MESSAGE BAR */}
-      {message && (
-        <div className="bg-yellow-100 border-l-4 border-[#ffde00] text-black py-3 px-4 mb-6 rounded shadow-sm">
-          {message}
-        </div>
-      )}
-
-      {/* GREEN NOTICE BAR */}
-      {cart.length > 0 && (
-        <div className="bg-[#1a8a4e] text-white py-4 px-6 rounded-sm flex justify-between items-center mb-6 text-[15px]">
-          <span>{cartMessage}</span>
-          <button className="font-semibold flex items-center gap-2 hover:underline">
-            Checkout <span className="text-xl">➡</span>
-          </button>
-        </div>
-      )}
-
-      {/* YELLOW COUPON BAR */}
-      <div className="bg-[#ffde00] p-4 rounded-sm mb-12 text-[15px]">
-        Have a coupon?{" "}
-        <button className="font-bold hover:text-gray-700 transition-colors">
-          Click here to enter your code
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-        {/* LEFT COLUMN – BILLING & SHIPPING */}
-        <div className="lg:col-span-7 bg-white">
-          <section className="mb-12">
-            <h2 className="text-[28px] font-semibold mb-8 pb-1 relative">
-              Billing details
-              <div className="absolute bottom-0 left-0 w-32 h-[3px] bg-[#ffde00]"></div>
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-              <div className="flex flex-col gap-2">
-                <label className="text-[14px] font-bold">
-                  First name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="border border-gray-200 rounded-full px-6 py-4 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-all"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-[14px] font-bold">
-                  Last name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="border border-gray-200 rounded-full px-6 py-4 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-all"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2 col-span-full">
-                <label className="text-[14px] font-bold">
-                  Phone <span className="text-red-500">*</span>
-                </label>
-                <div className="flex border border-gray-200 rounded-full overflow-hidden">
-                  <span className="px-6 py-4 border-r border-gray-200 bg-white text-gray-500">
-                    +251
-                  </span>
-                  <input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="flex-1 px-4 py-4 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2 col-span-full">
-                <label className="text-[14px] font-bold">
-                  Email address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="border border-gray-200 rounded-full px-6 py-4 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-all"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2 col-span-full">
-                <label className="text-[14px] font-bold">
-                  Street address (optional)
-                </label>
-                <input
-                  value={street}
-                  onChange={(e) => setStreet(e.target.value)}
-                  placeholder="Street name"
-                  className="border border-gray-200 rounded-full px-6 py-4 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-[14px] font-bold">
-                  Town / City <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="City Name"
-                  className="border border-gray-200 rounded-full px-6 py-4 focus:outline-none"
-                />
-              </div>
-
-              {/* CREATE ACCOUNT SECTION */}
-              <div className="col-span-full mt-4 flex flex-col gap-4">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4"
-                    checked={createAccount}
-                    onChange={() => setCreateAccount(!createAccount)}
-                  />
-                  <span className="text-[15px] font-bold text-[#444] group-hover:text-black">
-                    Create an account?
-                  </span>
-                </label>
-                {createAccount && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label className="text-[14px] font-bold block mb-2">
-                      Account password (optional)
-                    </label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Password (optional)"
-                      className="border border-gray-200 rounded-full px-6 py-4 focus:outline-none w-full md:w-1/2"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* RIGHT COLUMN – ORDER SUMMARY */}
-        <div className="lg:col-span-5 bg-gray-100 border border-gray-100 p-8 rounded-sm shadow-sm self-start">
-          <h2 className="text-[26px] font-semibold mb-8 pb-1 relative">
-            Your order
-            <div className="absolute bottom-0 left-0 w-24 h-[3px] bg-[#ffde00]"></div>
-          </h2>
-
-          <div className="w-full text-[15px] mb-6">
-            <div className="flex justify-between font-bold border-b border-gray-200 pb-4 mb-4">
-              <span>Product</span>
-              <span>Subtotal</span>
-            </div>
-
-            <div className="space-y-4">
-              {cart.map((item) => (
-                <div
-                  key={item.menuItemId}
-                  className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0"
-                >
-                  <span className="text-gray-600 font-medium">
-                    {item.name}
-                    <span className="font-bold text-black ml-2">
-                      × {item.quantity}
-                    </span>
-                  </span>
-                  <span className="font-bold">
-                    Br{" "}
-                    {(item.price * item.quantity).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-between py-6 border-t border-gray-200 mt-4">
-              <span className="font-bold">Subtotal</span>
-              <span className="font-bold">
-                Br{" "}
-                {subtotal.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                })}
-              </span>
-            </div>
-
-            {/* SHIPPING SELECTOR */}
-            <div className="border-t border-gray-200 pt-6 pb-6">
-              <p className="font-bold mb-4">Shipping</p>
-              <div className="space-y-4">
-                <label className="flex items-start justify-between gap-3 cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      checked={shipping === 200}
-                      onChange={() => setShipping(200)}
-                      className="mt-1"
-                    />
-                    <span className="text-gray-600">
-                      Express Delivery (Addis Ababa):
-                    </span>
-                  </div>
-                  <span className="font-bold shrink-0">Br 200.00</span>
-                </label>
-                <label className="flex items-start justify-between gap-3 cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      checked={shipping === 500}
-                      onChange={() => setShipping(500)}
-                      className="mt-1"
-                    />
-                    <span className="text-gray-600">Regional Delivery:</span>
-                  </div>
-                  <span className="font-bold shrink-0">Br 500.00</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="radio"
-                    checked={shipping === 0}
-                    onChange={() => setShipping(0)}
-                  />
-                  <span className="text-gray-600">Pickup From Store:</span>
-                  <span className="font-bold ml-auto">Free</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="flex justify-between text-[18px] font-bold border-t border-gray-200 pt-6">
-              <span>Total</span>
-              <span>
-                Br{" "}
-                {total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-          </div>
-
-          {/* PAYMENT METHODS */}
-          <div className="mt-10 space-y-6">
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <input
-                type="radio"
-                checked={paymentMethod === "COD"}
-                onChange={() => setPaymentMethod("COD")}
-              />
-              <span className="font-bold text-[#444]">Cash On Delivery</span>
-            </label>
-
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  checked={paymentMethod === "BANK"}
-                  onChange={() => setPaymentMethod("BANK")}
-                />
-                <span className="font-bold text-[#444]">
-                  Bank Transfer Or TeleBirr
-                </span>
-              </label>
-              {paymentMethod === "BANK" && (
-                <div className="bg-[#f2f2f2] p-6 text-[14px] leading-relaxed text-[#555] rounded-sm">
-                  Email ላይ በሚላክ የድርጅት አካውንት ቁጥር ወይም በቴሌብር ስልክ ቁጥር መክፈል ይችላሉ። OTP
-                  will be sent to your phone to verify the transaction.
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  checked={paymentMethod === "CHAPA"}
-                  onChange={() => setPaymentMethod("CHAPA")}
-                />
-                <span className="font-bold text-[#444]">
-                  Chapa Financial Technologies
-                </span>
-              </label>
-              {paymentMethod === "CHAPA" && (
-                <div className="bg-[#f2f2f2] p-6 text-[14px] leading-relaxed text-[#555] rounded-sm">
-                  Pay using your Tele birr, CBE Birr, ATM, Bank account, Mobile
-                  money through Chapa's secure gateway.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            onClick={handlePlaceOrder}
-            disabled={loading}
-            className="mt-10 bg-[#ffde00] text-black w-full py-5 rounded-full text-[17px] font-bold hover:bg-black hover:text-white transition-all duration-300 shadow-sm"
-          >
-            {loading ? "Processing..." : "Place order"}
-          </button>
-        </div>
-      </div>
-
-      {/* OTP MODAL */}
-      {showOtp && (
-        <OtpModal phone={phone} onVerify={handleVerifyOtp} loading={loading} />
-      )}
+    <div className="w-full min-h-screen bg-gray-50 flex flex-col">
+      {!hideLayout && <Navbar />}
+      <div className="flex-1 w-full">{children}</div>
+      {!hideLayout && <Footer />}
     </div>
+  );
+}
+export default function App() {
+  return (
+    <CartProvider>
+      <SocketProvider>
+        <Router>
+          <LayoutWrapper>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/restaurant/:id" element={<RestaurantMenu />} />
+
+
+              <Route path="/account/myorders" element={<OrdersPageAccount />} />
+              <Route path="/account/favorites" element={<FavoritesPage />} />
+              <Route path="/account" element={<AccountSettingsPage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/restaurants" element={<Restaurants />} />
+
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+              {/* Cart + Checkout */}
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/orders/:id" element={<OrdersPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              {/* <Route path="/payment" element={<PaymentPage />} /> */}
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              {/* AUTH */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+
+              {/* DASHBOARDS */}
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route
+                path="/restaurant-dashboard"
+                element={<RestaurantDashboard />}
+              />
+            </Routes>
+          </LayoutWrapper>
+        </Router>
+      </SocketProvider>
+    </CartProvider>
   );
 }

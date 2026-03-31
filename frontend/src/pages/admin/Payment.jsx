@@ -10,16 +10,17 @@ import {
   ArrowUpRight, PieChart as PieIcon, Percent, ShieldCheck
 } from "lucide-react";
 import { motion } from "framer-motion";
-
+import { useTranslation } from "react-i18next";
 const API_BASE_URL = "http://localhost:5000";
 
 /* ================= COMPONENT ================= */
 
 export default function PaymentAnalytics() {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState("ALL");
-  const [timeRange, setTimeRange] = useState("Last 7 Days");
+  const [timeRange, setTimeRange] = useState(t("last7Days"));
   const [loading, setLoading] = useState(true);
 
   /* ================= DATA FETCHING ================= */
@@ -78,19 +79,20 @@ export default function PaymentAnalytics() {
     const matrix = {
       CHAPA: {
         ...init,
-        label: "Chapa (Digital)",
+        label: t("chapaDigital"),
         color: "#3b82f6",
         icon: <ShieldCheck />,
       },
       BANK: {
         ...init,
-        label: "Bank / Telebirr",
+        label: t("bankTelebirr")
+        ,
         color: "#8b5cf6",
         icon: <Landmark />,
       },
       COD: {
         ...init,
-        label: "Cash on Delivery",
+        label: t("cashOnDelivery"),
         color: "#f59e0b",
         icon: <Wallet />,
       },
@@ -144,7 +146,7 @@ export default function PaymentAnalytics() {
     <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
       <div className="text-center">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-slate-500 font-bold tracking-widest uppercase text-xs">Processing Ledger...</p>
+        <p className="text-slate-500 font-bold tracking-widest uppercase text-xs">{t("processingLedger")}...</p>
       </div>
     </div>
   );
@@ -156,9 +158,9 @@ export default function PaymentAnalytics() {
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-12">
         <div>
           <h1 className="text-4xl font-black tracking-tighter uppercase italic">
-            Payments <span className="text-blue-600">Portal</span>
+            {t("payments")} <span className="text-blue-600">{t("portal")}</span>
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium">Revenue split & Disbursement tracking</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">{t("revenueTracking")}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -169,7 +171,7 @@ export default function PaymentAnalytics() {
               onChange={(e) => setSelectedRestaurant(e.target.value)}
               className="pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-bold text-sm"
             >
-              <option value="ALL">All Restaurants</option>
+              <option value="ALL">{t("allRestaurants")}</option>
               {restaurants.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -182,9 +184,9 @@ export default function PaymentAnalytics() {
               onChange={(e) => setTimeRange(e.target.value)}
               className="pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-bold text-sm"
             >
-              <option>Last 24 Hours</option>
-              <option>Last 7 Days</option>
-              <option>Last 30 Days</option>
+              <option>{t("last24Hours")}</option>
+              <option>{t("last7Days")}</option>
+              <option>{t("last30Days")}</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           </div>
@@ -197,9 +199,9 @@ export default function PaymentAnalytics() {
 
       {/* --- TOP KPI ROW --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-        <MainStat label="Platform Gross" value={globalStats.gross} sub="Total processed volume" icon={<DollarSign />} color="blue" />
-        <MainStat label="Earned Commission" value={globalStats.comm} sub="Your 10% platform share" icon={<Percent />} color="emerald" />
-        <MainStat label="Restaurant Payouts" value={globalStats.net} sub="Net amount to be settled" icon={<ArrowUpRight />} color="purple" />
+        <MainStat label={t("platformGross")} value={globalStats.gross} sub="Total processed volume" icon={<DollarSign />} color="blue" />
+        <MainStat label={t("earnedCommission")} value={globalStats.comm} sub="Your 10% platform share" icon={<Percent />} color="emerald" />
+        <MainStat label={t("restaurantPayouts")} value={globalStats.net} sub="Net amount to be settled" icon={<ArrowUpRight />} color="purple" />
       </div>
 
       {/* --- PAYMENT METHOD MATRIX GRID --- */}
@@ -219,22 +221,22 @@ export default function PaymentAnalytics() {
                 </div>
                 <h3 className="font-black uppercase tracking-tight">{method.label}</h3>
               </div>
-              <span className="text-[10px] font-black px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg uppercase">Active</span>
+              <span className="text-[10px] font-black px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg uppercase">{t("active")}</span>
             </div>
 
             <div className="space-y-6">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Revenue</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t("totalRevenue")}</p>
                 <p className="text-3xl font-black">Br {method.gross.toLocaleString()}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-50 dark:border-slate-800">
                 <div>
-                  <p className="text-[10px] font-black text-rose-500 uppercase mb-1">Commission</p>
+                  <p className="text-[10px] font-black text-rose-500 uppercase mb-1">{t("commission")}</p>
                   <p className="text-lg font-bold">Br {method.commission.toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-emerald-500 uppercase mb-1">Restaurant Net</p>
+                  <p className="text-[10px] font-black text-emerald-500 uppercase mb-1">{t("restaurantNet")}</p>
                   <p className="text-lg font-bold">Br {method.net.toLocaleString()}</p>
                 </div>
               </div>
@@ -258,7 +260,7 @@ export default function PaymentAnalytics() {
         <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-              <PieIcon className="text-blue-600" /> Revenue Distribution
+              <PieIcon className="text-blue-600" /> {t("revenueDistribution")}
             </h3>
             <RefreshCcw className="text-slate-300 w-4 h-4 cursor-pointer hover:rotate-180 transition-transform duration-700" />
           </div>
@@ -290,20 +292,20 @@ export default function PaymentAnalytics() {
 
         {/* REVENUE SPLIT SUMMARY */}
         <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <h3 className="text-xl font-black uppercase tracking-tight mb-8">Financial Health Score</h3>
+          <h3 className="text-xl font-black uppercase tracking-tight mb-8">{t("financialHealth")}</h3>
           <div className="space-y-8">
             <HealthItem
-              label="Digital Adoption (Chapa)"
+              label={t("digitalAdoption")}
               percent={((paymentMetrics.find(m => m.label.includes("Chapa"))?.gross / globalStats.gross) * 100) || 0}
               color="blue"
             />
             <HealthItem
-              label="Bank Settlement (Telebirr)"
+              label={t("bankSettlement")}
               percent={((paymentMetrics.find(m => m.label.includes("Bank"))?.gross / globalStats.gross) * 100) || 0}
               color="purple"
             />
             <HealthItem
-              label="Cash Exposure (COD)"
+              label={t("cashExposure")}
               percent={((paymentMetrics.find(m => m.label.includes("Cash"))?.gross / globalStats.gross) * 100) || 0}
               color="amber"
             />
@@ -315,9 +317,9 @@ export default function PaymentAnalytics() {
                 <ShieldCheck size={24} />
               </div>
               <div>
-                <h4 className="font-black text-blue-900 dark:text-blue-100 uppercase text-xs tracking-widest">Platform Note</h4>
+                <h4 className="font-black text-blue-900 dark:text-blue-100 uppercase text-xs tracking-widest">{t("platformNote")}</h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1 font-medium leading-relaxed">
-                  Digital payments via Chapa and Bank Transfer are settled instantly. COD payments require manual reconciliation by restaurant staff.
+                  {t("platformNoteDesc")}
                 </p>
               </div>
             </div>
@@ -337,7 +339,7 @@ function MainStat({ label, value, sub, icon, color }) {
     emerald: "bg-emerald-600 shadow-emerald-500/20",
     purple: "bg-purple-600 shadow-purple-500/20",
   };
-
+  const { t } = useTranslation();
   return (
     <motion.div
       whileHover={{ y: -5 }}
@@ -367,7 +369,7 @@ function HealthItem({ label, percent, color }) {
     purple: "bg-purple-500",
     amber: "bg-amber-500",
   };
-
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-end">

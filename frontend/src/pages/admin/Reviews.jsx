@@ -5,10 +5,11 @@ import {
   FiMapPin, FiAlertCircle, FiCheckCircle, FiX
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { useTranslation } from "react-i18next";
 const API_URL = "http://localhost:5000";
 
 export default function AdminReviews() {
+  const { t } = useTranslation();
   const [reviews, setReviews] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState("ALL");
@@ -81,8 +82,8 @@ export default function AdminReviews() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.5 }}
               className={`fixed top-10 right-10 z-[100] flex items-center gap-4 px-6 py-4 rounded-3xl shadow-2xl backdrop-blur-md border ${statusMsg.type === "success"
-                  ? "bg-emerald-500/90 text-white border-emerald-400"
-                  : "bg-rose-500/90 text-white border-rose-400"
+                ? "bg-emerald-500/90 text-white border-emerald-400"
+                : "bg-rose-500/90 text-white border-rose-400"
                 }`}
             >
               {statusMsg.type === "success" ? <FiCheckCircle className="text-xl" /> : <FiAlertCircle className="text-xl" />}
@@ -96,9 +97,9 @@ export default function AdminReviews() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="space-y-2">
             <h2 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">
-              Review <span className="text-blue-600 dark:text-blue-400 text-glow">Vault</span>
+              {t("review")}<span className="text-blue-600 dark:text-blue-400 text-glow">{t("Vault")}</span>
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 font-bold tracking-wide">CENTRAL MODERATION PANEL</p>
+            <p className="text-slate-500 dark:text-slate-400 font-bold tracking-wide">{t("centralModeration")}</p>
           </div>
 
           <div className="relative group">
@@ -110,7 +111,7 @@ export default function AdminReviews() {
                 onChange={(e) => setSelectedRestaurant(e.target.value)}
                 className="bg-transparent pl-3 pr-10 py-3 text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest outline-none appearance-none cursor-pointer"
               >
-                <option value="ALL">All Destinations</option>
+                <option value="ALL">{t("allDestinations")}</option>
                 {restaurants.map((r) => <option key={r._id} value={r._id} className="dark:bg-slate-900">{r.name}</option>)}
               </select>
             </div>
@@ -120,15 +121,15 @@ export default function AdminReviews() {
         {/* --- DASHBOARD CARDS --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <StatCard
-            label="Avg Satisfaction"
+            label={t("avgSatisfaction")}
             value={avgRating}
-            sub="Out of 5 Stars"
+            sub={t("outOfStars")}
             icon={<FiStar className="text-amber-400 fill-amber-400" />}
           />
           <StatCard
-            label="Total Submissions"
+            label={t("totalSubmissions")}
             value={reviews.length}
-            sub="Verified Reviews"
+            sub={t("verifiedReviews")}
             icon={<FiMessageSquare className="text-blue-500" />}
           />
         </div>
@@ -199,7 +200,7 @@ export default function AdminReviews() {
                     {/* ACTIONS */}
                     <div className="lg:self-start">
                       <button
-                        onClick={() => { if (window.confirm("Purge this record?")) handleDelete(review._id) }}
+                        onClick={() => { if (window.confirm(t("purgeConfirm"))) handleDelete(review._id) }}
                         className="p-4 bg-rose-50 dark:bg-rose-950/30 text-rose-500 dark:text-rose-400 rounded-3xl hover:bg-rose-500 hover:text-white transition-all shadow-sm"
                       >
                         <FiTrash2 size={22} />
@@ -234,17 +235,22 @@ const StatCard = ({ label, value, sub, icon }) => (
   </div>
 );
 
-const LoadingSkeleton = () => (
-  <div className="flex flex-col items-center justify-center py-40 space-y-6">
-    <div className="w-16 h-16 border-t-4 border-blue-600 rounded-full animate-spin"></div>
-    <p className="text-slate-400 font-black text-xs uppercase tracking-widest animate-pulse">Establishing Secure Connection...</p>
-  </div>
-);
+const LoadingSkeleton = () => {
+  const { t } = useTranslation(); // now t is defined
+  return (
+    <div className="flex flex-col items-center justify-center py-40 space-y-6">
+      <div className="w-16 h-16 border-t-4 border-blue-600 rounded-full animate-spin"></div>
+      <p className="text-slate-400 font-black text-xs uppercase tracking-widest animate-pulse">
+        {t("establishingConnection")}...
+      </p>
+    </div>
+  );
+};
 
 const EmptyState = () => (
   <div className="text-center py-40 bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800 shadow-inner">
     <FiMessageSquare className="mx-auto text-7xl text-slate-200 dark:text-slate-800 mb-6" />
-    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">No Data Stream</h3>
-    <p className="text-slate-500 font-medium">The vault is currently empty for this restaurant.</p>
+    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">{t("noData")}</h3>
+    <p className="text-slate-500 font-medium">{t("vaultEmpty")}</p>
   </div>
 );

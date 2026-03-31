@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import {
-  FiHome, FiUsers, FiAlertCircle, FiLogOut, FiShoppingBag, FiFileText,
+  FiHome, FiUsers, FiLogOut, FiShoppingBag, FiFileText,
   FiMoon, FiSun, FiGrid, FiTrendingUp, FiActivity, FiMessageSquare,
-  FiGlobe, FiChevronDown, FiClock, FiCheckCircle
+  FiGlobe, FiChevronDown, FiClock, FiCheckCircle, FiSettings, FiUser, FiTool, FiMenu, FiX
 } from "react-icons/fi";
 import { FaCreditCard, FaStore } from "react-icons/fa";
 import axios from "axios";
@@ -18,6 +18,8 @@ import Category from "./Category";
 import Analytics from "./Analytics";
 import Payments from "./Payment";
 import AdminReviews from "./Reviews";
+import SystemSettings from "./SystemSettings";
+import ProfileSettings from "./ProfileSettings";
 
 const API_URL = "http://localhost:5000";
 const SOCKET_URL = "http://localhost:5000";
@@ -29,40 +31,117 @@ export default function AdminDashboard() {
   const [activePage, setActivePage] = useState(() => {
     return localStorage.getItem("admin_active_tab") || "dashboard";
   });
-  const [unseenCount, setUnseenCount] = useState(0);
+
+  const [unseenCount, setUnseenCount] = useState(() => {
+    const currentTab = localStorage.getItem("admin_active_tab");
+    if (currentTab === "orders") return 0;
+    return parseInt(localStorage.getItem("admin_unseen_count")) || 0;
+  });
+
   const [openLang, setOpenLang] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // const [adminInfo, setAdminInfo] = useState({
+  //   name: "System Admin",
+  //   email: "admin@addiseats.com",
+  //   image: null
+  // });
 
   // ---------------- PERSISTENCE & SOCKETS ----------------
   useEffect(() => {
     localStorage.setItem("admin_active_tab", activePage);
+  }, [activePage]);
 
-    // Reset unseen count if admin clicks on orders
-    if (activePage === "orders") {
-      setUnseenCount(0);
-    }
 
+  useEffect(() => {
     const socket = io(SOCKET_URL, { withCredentials: true });
+
     const adminId = localStorage.getItem("adminId");
     if (adminId) socket.emit("registerAdmin", adminId);
 
     socket.on("adminNewOrder", () => {
-      if (activePage !== "orders") {
-        setUnseenCount((prev) => prev + 1);
+      if (localStorage.getItem("admin_active_tab") !== "orders") {
+        setUnseenCount((prev) => {
+          const newCount = prev + 1;
+          localStorage.setItem("admin_unseen_count", newCount.toString());
+          return newCount;
+        });
       }
     });
 
-    return () => socket.disconnect();
-  }, [activePage]);
+    return () => {
+      socket.off("adminNewOrder");
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
+    const markSeen = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        await axios.post(
+          `${API_URL}/api/orders/admin/mark-seen`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setUnseenCount(0);
+        localStorage.setItem("admin_unseen_count", "0");
+
+      } catch (err) {
+        console.error("Failed to mark orders as seen", err);
+      }
+    };
+
+    if (activePage === "orders") {
+      markSeen();
+    }
+  }, [activePage]);
+
+  // ---------------- PROFILE & DATA FETCH ----------------
+  useEffect(() => {
+    const fetchAdminProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await axios.get(`${API_URL}/api/admin/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data) {
+          setAdminInfo({
+            name: `${res.data.firstName || 'Admin'} ${res.data.lastName || ''}`,
+            email: res.data.email || '',
+            image: res.data.profilePicture || null
+          });
+        }
+      } catch (err) { console.warn("Profile fetch failed."); }
+    };
+
     const fetchUnseen = async () => {
       try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
         const res = await axios.get(`${API_URL}/api/orders/admin/unseen-count`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setUnseenCount(res.data.unseenCount);
+
+        const count = res.data?.unseenCount || 0;
+        const currentTab = localStorage.getItem("admin_active_tab");
+        if (currentTab !== "orders") {
+          setUnseenCount(count);
+          localStorage.setItem("admin_unseen_count", count.toString());
+        } else {
+          setUnseenCount(0);
+          localStorage.setItem("admin_unseen_count", "0");
+        }
       } catch (err) { console.error("Unseen count error", err); }
     };
+
+    fetchAdminProfile();
     fetchUnseen();
   }, []);
 
@@ -71,7 +150,6 @@ export default function AdminDashboard() {
     window.location.href = "/";
   };
 
-  // Helper to render the correct component based on activePage
   const renderContent = () => {
     switch (activePage) {
       case "dashboard": return <AdminDashboardContent />;
@@ -82,17 +160,35 @@ export default function AdminDashboard() {
       case "payment": return <Payments />;
       case "analytics": return <Analytics />;
       case "reviews": return <AdminReviews />;
+      case "system-settings": return <SystemSettings />;
+      case "my-profile": return <ProfileSettings />;
       default: return <AdminDashboardContent />;
     }
+  };
+
+  const closeSidebar = (page) => {
+    setActivePage(page);
+    setIsSidebarOpen(false);
   };
 
   return (
     <div className={`flex w-full min-h-screen ${darkMode ? "dark" : ""}`}>
       <div className="flex w-full min-h-screen bg-slate-50 dark:bg-[#0F172A] transition-colors duration-300">
 
-        {/* ---------------- Sidebar ---------------- */}
-        <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed h-full z-20">
-          <div className="p-8">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside className={`
+          w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed h-full z-50 transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
+        `}>
+          <div className="p-8 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
                 <FiActivity size={24} />
@@ -102,17 +198,54 @@ export default function AdminDashboard() {
                 <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">{t("centralAdmin")}</p>
               </div>
             </div>
+            <button className="lg:hidden text-slate-400 p-2" onClick={() => setIsSidebarOpen(false)}>
+              <FiX size={24} />
+            </button>
           </div>
+          {/* 
+          <div className="px-6 mb-6">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+              <img
+                src={adminInfo.image || `https://ui-avatars.com/api/?name=${adminInfo.name}&background=4F46E5&color=fff`}
+                alt="Admin"
+                className="w-10 h-10 rounded-xl object-cover border-2 border-white dark:border-slate-700 shadow-sm"
+              />
+              <div className="overflow-hidden">
+                <p className="text-xs font-black dark:text-white truncate uppercase tracking-tight">{adminInfo.name}</p>
+                <p className="text-[9px] font-bold text-slate-400 truncate">{adminInfo.email}</p>
+              </div>
+            </div>
+          </div> */}
 
-          <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-            <SidebarItem icon={<FiHome />} label={t("overview")} active={activePage === "dashboard"} onClick={() => setActivePage("dashboard")} />
-            <SidebarItem icon={<FiUsers />} label={t("users")} active={activePage === "users"} onClick={() => setActivePage("users")} />
-            <SidebarItem icon={<FiShoppingBag />} label={t("restaurants")} active={activePage === "restaurants"} onClick={() => setActivePage("restaurants")} />
-            <SidebarItem icon={<FiGrid />} label={t("categories")} active={activePage === "categories"} onClick={() => setActivePage("categories")} />
-            <SidebarItem icon={<FiFileText />} label={t("orders")} active={activePage === "orders"} onClick={() => setActivePage("orders")} badge={unseenCount} />
-            <SidebarItem icon={<FaCreditCard />} label={t("payments")} active={activePage === "payment"} onClick={() => setActivePage("payment")} />
-            <SidebarItem icon={<FiTrendingUp />} label={t("analytics")} active={activePage === "analytics"} onClick={() => setActivePage("analytics")} />
-            <SidebarItem icon={<FiMessageSquare />} label={t("reviews")} active={activePage === "reviews"} onClick={() => setActivePage("reviews")} />
+          <nav className="flex-1 px-4 space-y-1 overflow-y-auto pb-10">
+            <SidebarItem icon={<FiHome />} label={t("overview")} active={activePage === "dashboard"} onClick={() => closeSidebar("dashboard")} />
+            <SidebarItem icon={<FiUsers />} label={t("users")} active={activePage === "users"} onClick={() => closeSidebar("users")} />
+            <SidebarItem icon={<FiShoppingBag />} label={t("restaurants")} active={activePage === "restaurants"} onClick={() => closeSidebar("restaurants")} />
+            <SidebarItem icon={<FiGrid />} label={t("categories")} active={activePage === "categories"} onClick={() => closeSidebar("categories")} />
+            <SidebarItem icon={<FiFileText />} label={t("orders")} active={activePage === "orders"} onClick={() => closeSidebar("orders")} badge={unseenCount} />
+            <SidebarItem icon={<FaCreditCard />} label={t("payments")} active={activePage === "payment"} onClick={() => closeSidebar("payment")} />
+            <SidebarItem icon={<FiTrendingUp />} label={t("analytics")} active={activePage === "analytics"} onClick={() => closeSidebar("analytics")} />
+            <SidebarItem icon={<FiMessageSquare />} label={t("reviews")} active={activePage === "reviews"} onClick={() => closeSidebar("reviews")} />
+
+            <div>
+              <button
+                onClick={() => setSettingsOpen(!settingsOpen)}
+                className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all group ${(activePage === "system-settings" || activePage === "my-profile") ? "bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}
+              >
+                <div className="flex items-center gap-4">
+                  <FiSettings className={`text-xl ${(activePage === "system-settings" || activePage === "my-profile") ? "text-indigo-600" : "text-slate-400 group-hover:text-indigo-500"}`} />
+                  <span className="font-bold text-sm tracking-tight">{t("settings")}</span>
+                </div>
+                <FiChevronDown className={`transition-transform duration-300 ${settingsOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {settingsOpen && (
+                <div className="mt-1 ml-6 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                  <SidebarItem icon={<FiTool size={16} />} label={t("systemSettings")} active={activePage === "system-settings"} onClick={() => closeSidebar("system-settings")} />
+                  <SidebarItem icon={<FiUser size={16} />} label={t("myProfile")} active={activePage === "my-profile"} onClick={() => closeSidebar("my-profile")} />
+                </div>
+              )}
+            </div>
           </nav>
 
           <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
@@ -125,19 +258,29 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        {/* ---------------- Main Content ---------------- */}
-        <main className="flex-1 ml-72 p-8 lg:p-12">
-          <header className="flex justify-between items-start mb-10">
-            <div>
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-                {activePage === "dashboard" ? t("platformAnalytics") : t(activePage)}
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">{t("welcomeBackAdmin")}</p>
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-72 p-4 md:p-8 lg:p-12 transition-all">
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300"
+              >
+                <FiMenu size={24} />
+              </button>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-none">
+                  {activePage === "dashboard" ? t("platformAnalytics") :
+                    activePage === "system-settings" ? t("systemSettings") :
+                      activePage === "my-profile" ? t("myProfile") : t(activePage)}
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 font-medium text-xs md:text-sm mt-2">{t("welcomeBackAdmin")}</p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 self-end md:self-auto">
               <div className="relative">
-                <button onClick={() => setOpenLang(!openLang)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all text-xs font-black uppercase text-slate-600 dark:text-slate-300">
+                <button onClick={() => setOpenLang(!openLang)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all text-[10px] md:text-xs font-black uppercase text-slate-600 dark:text-slate-300">
                   <FiGlobe className="text-indigo-600" />
                   {i18n.language === "am" ? "አማርኛ" : "English"}
                   <FiChevronDown className={`transition-transform ${openLang ? 'rotate-180' : ''}`} />
@@ -161,7 +304,7 @@ export default function AdminDashboard() {
   );
 }
 
-/* ---------------- ADMIN DASHBOARD CONTENT (OVERVIEW) ---------------- */
+/* ---------------- DASHBOARD CONTENT SUB-COMPONENT ---------------- */
 function AdminDashboardContent() {
   const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
@@ -192,7 +335,7 @@ function AdminDashboardContent() {
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const todayOrders = orders.filter(o => o.createdAt.slice(0, 10) === today);
+    const todayOrders = orders.filter(o => o.createdAt?.slice(0, 10) === today);
     const revenue = todayOrders.reduce((sum, o) => sum + (o.adminCommission || 0), 0);
     return {
       totalToday: todayOrders.length,
@@ -206,22 +349,22 @@ function AdminDashboardContent() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-end">
-        <div className="relative group">
+      <div className="flex justify-center md:justify-end">
+        <div className="relative group w-full md:w-auto">
           <FaStore className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <select
             value={selectedRest}
             onChange={(e) => setSelectedRest(e.target.value)}
-            className="pl-12 pr-10 py-3 bg-white dark:bg-slate-800 dark:text-white rounded-2xl shadow-sm border-none font-bold text-sm min-w-[250px] appearance-none focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+            className="w-full pl-12 pr-10 py-3 bg-white dark:bg-slate-800 dark:text-white rounded-2xl shadow-sm border-none font-bold text-sm md:min-w-[250px] appearance-none focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
           >
             <option value="ALL">{t("allRestaurants")}</option>
-            {restaurants.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
+            {restaurants?.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
           </select>
           <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard title={t("dailyOrders")} value={stats.totalToday} icon={<FiShoppingBag />} color="blue" />
         <StatCard title={t("platformRevenue")} value={`ETB ${stats.revenueToday.toLocaleString()}`} icon={<FiTrendingUp />} color="emerald" />
         <StatCard title={t("pending")} value={stats.pending} icon={<FiClock />} color="orange" />
@@ -232,19 +375,21 @@ function AdminDashboardContent() {
         <div className="lg:col-span-2">
           <Card title={t("systemOrderStream")} subtitle={t("recentTransactions")}>
             <div className="mt-6 space-y-4">
-              {orders.slice(0, 6).map((o) => (
-                <div key={o._id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all">
+              {orders?.slice(0, 6).map((o) => (
+                <div key={o._id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl border border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all gap-3">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs">
-                      #{o._id.slice(-4).toUpperCase()}
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs shrink-0">
+                      #{o._id?.slice(-4).toUpperCase()}
                     </div>
-                    <div>
-                      <p className="font-bold text-sm dark:text-white">{o.restaurantId?.name || "Restaurant"}</p>
-                      <p className="text-[10px] uppercase font-black text-slate-400">{o.customerName?.firstName} • {new Date(o.createdAt).toLocaleTimeString()}</p>
+                    <div className="overflow-hidden">
+                      <p className="font-bold text-sm dark:text-white truncate">{o.restaurantId?.name || "Restaurant"}</p>
+                      <p className="text-[10px] uppercase font-black text-slate-400 truncate">
+                        {o.customerName?.firstName || "Guest"} • {o.createdAt ? new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-black text-slate-900 dark:text-white text-sm">ETB {o.totalPrice}</p>
+                  <div className="text-left sm:text-right w-full sm:w-auto flex sm:block justify-between items-center border-t sm:border-none pt-2 sm:pt-0">
+                    <p className="font-black text-slate-900 dark:text-white text-sm">ETB {o.totalPrice || 0}</p>
                     <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${o.orderStatus === "DELIVERED" ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"}`}>
                       {o.orderStatus}
                     </span>
@@ -258,8 +403,8 @@ function AdminDashboardContent() {
         <div className="space-y-6">
           <Card title={t("platformPulse")}>
             <div className="space-y-4 mt-4">
-              <StatusRow label={t("activeRestaurants")} value={restaurants.length} color="blue" />
-              <StatusRow label={t("failedPayments")} value={orders.filter(o => o.paymentStatus === "FAILED").length} color="orange" />
+              <StatusRow label={t("activeRestaurants")} value={restaurants?.length || 0} color="blue" />
+              <StatusRow label={t("failedPayments")} value={orders?.filter(o => o.paymentStatus === "FAILED").length || 0} color="orange" />
             </div>
           </Card>
         </div>
@@ -268,7 +413,7 @@ function AdminDashboardContent() {
   );
 }
 
-/* ---------------- REUSABLE UI COMPONENTS ---------------- */
+/* ---------------- UI HELPERS ---------------- */
 
 function SidebarItem({ icon, label, active, onClick, badge }) {
   return (
@@ -290,19 +435,19 @@ function StatCard({ title, value, icon, color }) {
     indigo: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20",
   };
   return (
-    <div className="bg-white dark:bg-slate-900 p-7 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-lg">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${colors[color]}`}>{icon}</div>
-      <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">{title}</p>
-      <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{value}</h2>
+    <div className="bg-white dark:bg-slate-900 p-5 md:p-7 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-lg">
+      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center mb-4 md:mb-6 ${colors[color]}`}>{icon}</div>
+      <p className="text-slate-400 font-black text-[9px] md:text-[10px] uppercase tracking-widest">{title}</p>
+      <h2 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white mt-1">{value}</h2>
     </div>
   );
 }
 
-function Card({ children, title, subtitle }) {
+function Card({ children, title, subtitle, className = "" }) {
   return (
-    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
-      <h3 className="text-lg font-black tracking-tight dark:text-white uppercase">{title}</h3>
-      {subtitle && <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{subtitle}</p>}
+    <div className={`bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 ${className}`}>
+      <h3 className="text-md md:text-lg font-black tracking-tight dark:text-white uppercase leading-none">{title}</h3>
+      {subtitle && <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{subtitle}</p>}
       {children}
     </div>
   );
@@ -314,9 +459,9 @@ function StatusRow({ label, value, color }) {
     <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
       <div className="flex items-center gap-3">
         <div className={`w-2 h-2 rounded-full ${dots[color]}`}></div>
-        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{label}</span>
+        <span className="text-xs md:text-sm font-bold text-slate-600 dark:text-slate-300">{label}</span>
       </div>
-      <span className="font-black text-lg dark:text-white">{value}</span>
+      <span className="font-black text-md md:text-lg dark:text-white">{value}</span>
     </div>
   );
 }

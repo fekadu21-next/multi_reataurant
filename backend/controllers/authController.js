@@ -2,6 +2,8 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
+import crypto from "crypto";
+import sendEmail from "../utils/sendEmail.js";
 
 // TEMP STORE (replace with DB or Redis in production)
 const otpStore = new Map();
@@ -65,9 +67,9 @@ export const login = async (req, res) => {
         role: user.role,
         restaurant: user.restaurant
           ? {
-              name: user.restaurant.name,
-              restaurantId: user.restaurant.restaurantId?._id || null,
-            }
+            name: user.restaurant.name,
+            restaurantId: user.restaurant.restaurantId?._id || null,
+          }
           : null,
       },
     });
@@ -167,4 +169,70 @@ export const deleteUser = async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) return res.status(404).json({ message: "User not found" });
   res.json({ message: "User deleted successfully" });
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+
+    await user.save();
+
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+    await sendEmail(
+      email,
+      "Password Reset",
+      `Click to reset: ${resetUrl}`
+    );
+
+    res.json({ message: "Reset link sent" });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
+
+// ✅ RESET PASSWORD
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Token invalid or expired" });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 };

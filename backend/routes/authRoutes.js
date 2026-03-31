@@ -11,6 +11,8 @@ import {
   saveBillingInfo,
   sendOtp,
   verifyOtp,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -33,5 +35,9 @@ router.delete("/users/:id", deleteUser);
 router.post("/billing", protect, saveBillingInfo);
 router.post("/send-otp", protect, sendOtp);
 router.post("/verify-otp", protect, verifyOtp);
+
+
+router.post("/forgot-password", forgotPassword);
+router.put("/reset-password/:token", resetPassword);
 
 export default router;

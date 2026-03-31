@@ -110,10 +110,10 @@ const orderSchema = new mongoose.Schema(
 
     /* ================= COMMISSION ================= */
 
-    commissionPercent: {
-      type: Number,
-      default: 15,
-    },
+    // commissionPercent: {
+    //   type: Number,
+    //   default: 15,
+    // },
     adminCommission: {
       type: Number,
       required: true,
@@ -137,36 +137,7 @@ const orderSchema = new mongoose.Schema(
       },
     },
 
-    /* ================= SHIPPING ================= */
 
-    shippingOptions: [
-      {
-        type: { type: String, enum: ["EXPRESS", "REGIONAL", "PICKUP"], required: true },
-        name: { type: String, required: true, default: "Express Delivery (Addis Ababa)" },
-        price: { type: Number, required: true, default: 200 },
-      },
-      {
-        type: { type: String, enum: ["EXPRESS", "REGIONAL", "PICKUP"], required: true },
-        name: { type: String, required: true, default: "Regional Delivery" },
-        price: { type: Number, required: true, default: 500 },
-      },
-      {
-        type: { type: String, enum: ["EXPRESS", "REGIONAL", "PICKUP"], required: true },
-        name: { type: String, required: true, default: "Pickup From Store" },
-        price: { type: Number, required: true, default: 0 },
-      },
-    ],
-
-    // The shipping option the customer selects when creating the order
-    selectedShipping: {
-      type: {
-        type: String,
-        enum: ["EXPRESS", "REGIONAL", "PICKUP"],
-        required: true,
-      },
-      name: { type: String, required: true },
-      price: { type: Number, required: true },
-    },
 
     instructions: {
       type: String,
