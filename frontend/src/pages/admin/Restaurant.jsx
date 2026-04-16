@@ -87,8 +87,13 @@ export default function Restaurants() {
       const formData = new FormData();
       formData.append("name", newRestaurant.name);
       formData.append("ownerId", newRestaurant.ownerId);
-      formData.append("street", newRestaurant.address.street);
-      formData.append("city", newRestaurant.address.city);
+      formData.append(
+        "address",
+        JSON.stringify({
+          street: newRestaurant.address.street,
+          city: newRestaurant.address.city,
+        })
+      );
       formData.append(
         "categories",
         JSON.stringify(
@@ -137,7 +142,10 @@ export default function Restaurants() {
     setEditRestaurant({
       name: r.name,
       ownerId: r.ownerId,
-      address: r.address,
+      address: {
+        street: r.address?.street || "",
+        city: r.address?.city || "",
+      },
       categories: r.categories.join(", "),
       deliveryFee: r.deliveryFee,
       deliveryTime: r.deliveryTime,
@@ -153,8 +161,8 @@ export default function Restaurants() {
       const formData = new FormData();
       formData.append("name", editRestaurant.name);
       formData.append("ownerId", editRestaurant.ownerId);
-      formData.append("street", editRestaurant.address.street);
-      formData.append("city", editRestaurant.address.city);
+      formData.append("address[street]", editRestaurant.address.street);
+      formData.append("address[city]", editRestaurant.address.city);
       formData.append(
         "categories",
         JSON.stringify(
@@ -301,7 +309,9 @@ export default function Restaurants() {
                     <td className="px-6 py-5">
                       <div className="flex flex-col gap-0.5 text-xs text-slate-600 dark:text-slate-400">
                         <div className="flex items-center gap-1.5 font-medium"><FiMapPin className="text-rose-500" size={12} /> {r.address.city}</div>
-                        <div className="opacity-70 truncate max-w-[100px] ml-4">{r.address.street}</div>
+                        <div className="opacity-70 truncate max-w-[100px] ml-4">
+                          {r.address?.street || "No street"}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-5 hidden lg:table-cell">

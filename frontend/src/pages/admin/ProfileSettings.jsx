@@ -203,7 +203,7 @@ export default function ProfileSettings() {
                     className="group bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:-translate-y-0.5"
                   >
                     <Save size={18} />
-                    {t("emailAddress")}
+                    update
                   </button>
                 </div>
               </div>

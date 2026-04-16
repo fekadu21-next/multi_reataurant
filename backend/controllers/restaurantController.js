@@ -24,12 +24,16 @@ export const createRestaurant = async (req, res) => {
     const {
       name,
       ownerId,
-      address,
       categories,
       deliveryFee,
       deliveryTime,
       description,
     } = req.body;
+
+    // ✅ FIX ADDRESS HERE
+    const address = req.body.address
+      ? JSON.parse(req.body.address)
+      : {};
 
     // Ensure categories is stored as an array
     let categoriesArray = categories;
@@ -43,12 +47,12 @@ export const createRestaurant = async (req, res) => {
       }
     }
 
-    const image = req.file ? req.file.filename : ""; // store only filename
+    const image = req.file ? req.file.filename : "";
 
     const restaurant = await Restaurant.create({
       name,
       ownerId,
-      address,
+      address, // ✅ now correct object
       categories: categoriesArray,
       deliveryFee,
       deliveryTime,
@@ -56,7 +60,6 @@ export const createRestaurant = async (req, res) => {
       image,
     });
 
-    // Update owner document
     if (ownerId) {
       await User.findByIdAndUpdate(ownerId, {
         restaurant: {
@@ -66,7 +69,6 @@ export const createRestaurant = async (req, res) => {
       });
     }
 
-    // Send back full image path
     res.status(201).json({
       message: "Restaurant created successfully",
       restaurant: {

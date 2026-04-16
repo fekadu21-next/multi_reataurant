@@ -38,6 +38,7 @@ export default function Index() {
         ]);
         const dataRest = await resRest.json();
         const dataMenu = await resMenu.json();
+        console.log("datamenu", dataMenu)
         setRestaurants(Array.isArray(dataRest) ? dataRest : []);
         setMenuItems(Array.isArray(dataMenu) ? dataMenu : []);
 
@@ -72,22 +73,31 @@ export default function Index() {
   }, [recommendations, searchQuery]);
 
   // Filter cuisine categories based on search query
+  /* ---------------- CUISINE GROUPING LOGIC ---------------- */
   const filteredCuisineMenus = useMemo(() => {
-    if (!menuItems?.length) return [];
-    const validMenus = menuItems.filter(item => item.category?.trim());
+    if (!menuItems.length) return [];
 
-    // First, filter by the search term
-    const searchFiltered = searchQuery
-      ? validMenus.filter(item => item.category.toLowerCase().includes(searchQuery))
-      : validMenus;
+    const categoryMap = new Map();
 
-    const uniqueCategories = [...new Set(searchFiltered.map(i => i.category))];
+    menuItems.forEach((item) => {
+      const catObj = item.categoryId;
 
-    return uniqueCategories.slice(0, 8).map((cat) => {
-      const items = searchFiltered.filter(i => i.category === cat);
-      return items[0]; // Pick the first item found for this category
-    }).filter(Boolean);
-  }, [menuItems, searchQuery]);
+      // Only process if the category object exists
+      if (catObj && catObj._id) {
+        // We use the category ID as the key to ensure uniqueness per category
+        if (!categoryMap.has(catObj._id)) {
+          categoryMap.set(catObj._id, {
+            image: item.image,
+            itemName: item.name, // The specific menu item name
+            categoryName: catObj.label || catObj.name || catObj.key, // The category name/label
+            restaurantId: item.restaurantId?._id || item.restaurantId
+          });
+        }
+      }
+    });
+
+    return Array.from(categoryMap.values()).slice(0, 8);
+  }, [menuItems]);
 
   /* ---------------- CART ACTION ---------------- */
   const handleQuickAdd = (item) => {
@@ -282,30 +292,44 @@ export default function Index() {
             </div>
           )}
         </div>
-
         {/* ======== 3. BROWSE BY CUISINE ======== */}
         <div className="bg-slate-900 dark:bg-black py-20 md:py-32 transition-colors duration-500">
           <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-16 uppercase">
               {t("browseCuisine")} <span className="text-orange-500 italic">Cuisine</span>
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
               {filteredCuisineMenus.length > 0 ? (
                 filteredCuisineMenus.map((menu, index) => (
                   <div
                     key={index}
                     className="group cursor-pointer text-center"
-                    onClick={() => navigate(`/restaurant/${menu.restaurantId?._id || menu.restaurantId}`)}
+                    onClick={() => navigate(`/restaurant/${menu.restaurantId}`)}
                   >
-                    <div className="aspect-square rounded-[30px] md:rounded-[50px] overflow-hidden border-4 border-slate-800 transition-all duration-500 group-hover:border-orange-500 mb-6">
-                      <img src={`${API_URL}${menu.image}`} alt={menu.name} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" />
+                    {/* Image Container */}
+                    <div className="aspect-square rounded-[30px] md:rounded-[50px] overflow-hidden border-4 border-slate-800 transition-all duration-500 group-hover:border-orange-500 mb-6 shadow-2xl">
+                      <img
+                        src={menu.image?.startsWith('http') ? menu.image : `${API_URL}${menu.image}`}
+                        alt={menu.itemName}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
+                      />
                     </div>
-                    <h3 className="text-lg font-black text-white uppercase group-hover:text-orange-500">{menu.category}</h3>
+
+                    {/* Category Label (Primary) */}
+                    <h3 className="text-lg font-black text-white uppercase group-hover:text-orange-500 transition-colors">
+                      {menu.categoryName}
+                    </h3>
+
+                    {/* Item Name (Secondary - Added as requested) */}
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1 group-hover:text-gray-300">
+                      Featured: {menu.itemName}
+                    </p>
                   </div>
                 ))
               ) : (
-                <div className="col-span-full text-center text-gray-500">
-                  {t("noCategoriesFound") || "No categories match your search."}
+                <div className="col-span-full text-center text-gray-500 py-10">
+                  {t("noCategoriesFound") || "No cuisines available at the moment."}
                 </div>
               )}
             </div>

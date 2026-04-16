@@ -31,11 +31,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /* ================= MIDDLEWARE ================= */
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://your-frontend.vercel.app" // will update later
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
-  }),
+  })
 );
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -64,7 +75,13 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 5000;
 const httpServer = createServer(app);
 export const io = new Server(httpServer, {
-  cors: { origin: "http://localhost:5173", credentials: true },
+  cors: {
+    origin: [
+      "http://localhost:5173",
+      "https://your-frontend.vercel.app" // update later
+    ],
+    credentials: true,
+  },
 });
 app.set("io", io);
 /* ================= ONLINE USERS TRACKING ================= */

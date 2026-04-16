@@ -88,12 +88,20 @@ const Navbar = () => {
   };
 
   // ============================= EFFECTS
+  // useEffect(() => {
+  //   if (token) {
+  //     fetchUser();
+  //     fetchNotifications();
+  //   }
+  // }, [token]);
   useEffect(() => {
     if (token) {
       fetchUser();
       fetchNotifications();
+    } else {
+      setUser(null);
     }
-  }, [token]);
+  }, [token, location]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -103,6 +111,7 @@ const Navbar = () => {
 
   const firstName = user?.fullname?.split(" ")[0] || "User";
   const firstLetter = firstName.charAt(0).toUpperCase();
+  const role = user?.role;
   const unseenNotifications = notifications.filter((n) => !n.isRead);
   const uniqueUnseenNotifications = Array.from(
     new Map(unseenNotifications.map((n) => [n.orderId._id, n])).values()
@@ -300,10 +309,63 @@ const Navbar = () => {
 
                   {openDropdown && (
                     <>
-                      <div className="fixed inset-0 z-[9998]" onClick={() => setOpenDropdown(false)} />
+                      <div
+                        className="fixed inset-0 z-[9998]"
+                        onClick={() => setOpenDropdown(false)}
+                      />
+
                       <div className="absolute top-full right-0 mt-4 w-64 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
-                          <ProfileDropdown user={user} onClose={() => setOpenDropdown(false)} />
+
+                          {/* ✅ CUSTOMER ONLY */}
+                          {role === "customer" && (
+                            <ProfileDropdown user={user} onClose={() => setOpenDropdown(false)} />
+                          )}
+
+                          {/* ✅ ADMIN */}
+                          {role === "admin" && (
+                            <div className="p-4 space-y-3">
+                              <button
+                                onClick={() => navigate("/admin-dashboard")}
+                                className="w-full text-left px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 font-bold"
+                              >
+                                Admin Dashboard
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  localStorage.clear();
+                                  navigate("/");
+                                }}
+                                className="w-full text-left px-4 py-2 rounded-xl text-red-500 hover:bg-red-50"
+                              >
+                                Logout
+                              </button>
+                            </div>
+                          )}
+
+                          {/* ✅ RESTAURANT OWNER */}
+                          {role === "restaurant_owner" && (
+                            <div className="p-4 space-y-3">
+                              <button
+                                onClick={() => navigate("/restaurant-dashboard")}
+                                className="w-full text-left px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 font-bold"
+                              >
+                                Restaurant Dashboard
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  localStorage.clear();
+                                  navigate("/");
+                                }}
+                                className="w-full text-left px-4 py-2 rounded-xl text-red-500 hover:bg-red-50"
+                              >
+                                Logout
+                              </button>
+                            </div>
+                          )}
+
                         </div>
                       </div>
                     </>

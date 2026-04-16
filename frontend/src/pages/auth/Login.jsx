@@ -24,7 +24,6 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
       console.log("FULL LOGIN RESPONSE:", data);
       console.log("USER OBJECT:", data.user);

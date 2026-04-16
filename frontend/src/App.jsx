@@ -29,6 +29,10 @@ import About from "./components/About";
 import Contact from "./components/Contact"
 import Services from "./components/Services"
 import Restaurants from "./components/Restaurants"
+
+import ProtectedRoute from "./routes/ProtectedRoute";
+import CustomerRoute from "./routes/CustomerRoute";
+
 function LayoutWrapper({ children }) {
   const location = useLocation();
 
@@ -59,9 +63,32 @@ export default function App() {
               <Route path="/restaurant/:id" element={<RestaurantMenu />} />
 
 
-              <Route path="/account/myorders" element={<OrdersPageAccount />} />
-              <Route path="/account/favorites" element={<FavoritesPage />} />
-              <Route path="/account" element={<AccountSettingsPage />} />
+              <Route
+                path="/account"
+                element={
+                  <CustomerRoute>
+                    <AccountSettingsPage />
+                  </CustomerRoute>
+                }
+              />
+
+              <Route
+                path="/account/myorders"
+                element={
+                  <CustomerRoute>
+                    <OrdersPageAccount />
+                  </CustomerRoute>
+                }
+              />
+
+              <Route
+                path="/account/favorites"
+                element={
+                  <CustomerRoute>
+                    <FavoritesPage />
+                  </CustomerRoute>
+                }
+              />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/services" element={<Services />} />
@@ -81,10 +108,21 @@ export default function App() {
               <Route path="/register" element={<Register />} />
 
               {/* DASHBOARDS */}
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route
+                path="/admin-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/restaurant-dashboard"
-                element={<RestaurantDashboard />}
+                element={
+                  <ProtectedRoute allowedRoles={["restaurant_owner"]}>
+                    <RestaurantDashboard />
+                  </ProtectedRoute>
+                }
               />
             </Routes>
           </LayoutWrapper>

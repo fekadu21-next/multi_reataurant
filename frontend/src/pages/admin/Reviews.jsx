@@ -248,9 +248,10 @@ const LoadingSkeleton = () => {
 };
 
 const EmptyState = () => (
+
   <div className="text-center py-40 bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800 shadow-inner">
     <FiMessageSquare className="mx-auto text-7xl text-slate-200 dark:text-slate-800 mb-6" />
-    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">{t("noData")}</h3>
-    <p className="text-slate-500 font-medium">{t("vaultEmpty")}</p>
+    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">No Data Stream</h3>
+    <p className="text-slate-500 font-medium">The vault is currently empty for this restaurant</p>
   </div>
 );
