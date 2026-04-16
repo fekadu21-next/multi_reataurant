@@ -16,7 +16,7 @@ import {
   getAdminUnseenCount,
   markAdminSeen,
 } from "../controllers/orderController.js";
-import { auth } from "../middleware/auth.js";
+import { auth } from "../middleware/Auth.js";
 import { optionalProtect } from "../middleware/authmiddlewr.js"
 const router = express.Router();
 
