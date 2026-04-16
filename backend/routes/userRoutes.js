@@ -12,7 +12,7 @@ import {
   updateProfileImage, // ✅ Import profile image controller
   upload, // ✅ Multer upload middleware
 } from "../controllers/userController.js";
-import { auth } from "../middleware/auth.js";
+import { auth } from "../middleware/Auth.js";
 
 const router = express.Router();
 
