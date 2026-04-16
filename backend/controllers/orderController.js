@@ -1,7 +1,7 @@
 import Order from "../models/Order.js";
 import Restaurant from "../models/Restaurant.js";
 import User from "../models/User.js";
-import { onlineOwners, onlineAdmins } from "../Server.js";
+import { onlineOwners, onlineAdmins } from "../server.js";
 import { createReviewNotification } from "./notificationController.js";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
 import bcrypt from "bcryptjs";
