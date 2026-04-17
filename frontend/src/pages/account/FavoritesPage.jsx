@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Heart, Utensils, Pizza, Store, ArrowRight, Loader2 } from "lucide-react";
+import { Heart, Utensils, Pizza, Store, Loader2 } from "lucide-react";
 
 const API_BASE = "https://multi-reataurant-1.onrender.com";
 
+// ✅ FIXED IMAGE HANDLER (same logic as Restaurants page)
 const getImageUrl = (path) => {
   if (!path) return "";
-  if (path.startsWith("http")) return path;
-  return `${API_BASE}${path}`;
+
+  // remove localhost if backend sends it
+  const cleanedPath = path.replace("http://localhost:5000", "");
+
+  return `${API_BASE}${cleanedPath}`;
 };
 
 const FavoritesPage = () => {
@@ -26,15 +30,19 @@ const FavoritesPage = () => {
   const fetchFavorites = async () => {
     try {
       setLoading(true);
+
       const res = await axios.get(
         `${API_BASE}/api/user/favorites`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+      console.log("🔥 Favorites:", res.data.favorites);
+
       setFavorites(res.data.favorites || []);
     } catch (err) {
-      console.error(err);
+      console.error("❌ ERROR:", err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -85,8 +93,8 @@ const FavoritesPage = () => {
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition ${filter === tab.id
-                  ? "bg-white text-orange-600 shadow scale-105"
-                  : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-orange-600 shadow scale-105"
+                    : "text-gray-600 hover:text-gray-900"
                   }`}
               >
                 {tab.icon}
