@@ -53,7 +53,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ✅ Handle preflight requests properly
-app.options("*", cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 /* ================= EXTRA HEADERS (SAFE FIX) ================= */
 app.use((req, res, next) => {
