@@ -1,448 +1,211 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
-import {
-  FiHome, FiUsers, FiLogOut, FiShoppingBag, FiFileText,
-  FiMoon, FiSun, FiGrid, FiTrendingUp, FiActivity, FiMessageSquare,
-  FiGlobe, FiChevronDown, FiClock, FiCheckCircle, FiSettings, FiUser, FiTool
-} from "react-icons/fi";
-import { FaCreditCard, FaStore } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { io } from "socket.io-client";
-import { ThemeContext } from "../../context/ThemeContext";
-import { useTranslation } from "react-i18next";
+import { Heart, Utensils, Pizza, Store, ArrowRight, Loader2 } from "lucide-react"; // Optional: lucide-react for icons
 
-// Imported Pages
-import OrdersPage from "./Orders";
-import UsersPage from "./Users";
-import RestaurantsPage from "./Restaurant";
-import Category from "./Category";
-import Analytics from "./Analytics";
-import Payments from "./Payment";
-import AdminReviews from "./Reviews";
-import SystemSettings from "./SystemSettings";
-import ProfileSettings from "./ProfileSettings";
-
-const API_URL = "http://localhost:5000";
-const SOCKET_URL = "http://localhost:5000";
-
-export default function AdminDashboard() {
-  const { t, i18n } = useTranslation();
-  const { darkMode, toggleTheme } = useContext(ThemeContext);
-
-  const [activePage, setActivePage] = useState(() => {
-    return localStorage.getItem("admin_active_tab") || "dashboard";
-  });
-
-  const [unseenCount, setUnseenCount] = useState(() => {
-    // If we start on orders page, force 0 immediately
-    const currentTab = localStorage.getItem("admin_active_tab");
-    if (currentTab === "orders") return 0;
-    return parseInt(localStorage.getItem("admin_unseen_count")) || 0;
-  });
-
-  const [openLang, setOpenLang] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
-  // const [adminInfo, setAdminInfo] = useState({
-  //   name: "System Admin",
-  //   email: "admin@addiseats.com",
-  //   image: null
-  // });
-
-  // ---------------- PERSISTENCE & SOCKETS ----------------
-  useEffect(() => {
-    // ✅ Save active tab
-    localStorage.setItem("admin_active_tab", activePage);
-  }, [activePage]);
-
-
-  // ✅ SEPARATE SOCKET EFFECT (RUN ONLY ONCE)
-  useEffect(() => {
-    const socket = io(SOCKET_URL, { withCredentials: true });
-
-    const adminId = localStorage.getItem("adminId");
-    if (adminId) socket.emit("registerAdmin", adminId);
-
-    socket.on("adminNewOrder", () => {
-      // ❗ IMPORTANT: use activePage directly (NOT setActivePage)
-      if (localStorage.getItem("admin_active_tab") !== "orders") {
-        setUnseenCount((prev) => {
-          const newCount = prev + 1;
-          localStorage.setItem("admin_unseen_count", newCount.toString());
-          return newCount;
-        });
-      }
-    });
-
-    return () => {
-      socket.off("adminNewOrder"); // ✅ remove listener
-      socket.disconnect();         // ✅ cleanup
-    };
-  }, []); // 🚨 ONLY ONCE (VERY IMPORTANT)
-
-  // ✅ MARK ORDERS AS SEEN WHEN OPENING ORDERS PAGE
-  useEffect(() => {
-    const markSeen = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        await axios.post(
-          `${API_URL}/api/orders/admin/mark-seen`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        // ✅ reset UI + localStorage
-        setUnseenCount(0);
-        localStorage.setItem("admin_unseen_count", "0");
-
-      } catch (err) {
-        console.error("Failed to mark orders as seen", err);
-      }
-    };
-
-    if (activePage === "orders") {
-      markSeen();
-    }
-  }, [activePage]);
-  // ---------------- PROFILE & DATA FETCH ----------------
-  // useEffect(() => {
-  //   const fetchAdminProfile = async () => {
-  //     try {
-  //       const token = localStorage.getItem("token");
-  //       if (!token) return;
-  //       const res = await axios.get(`${API_URL}/api/admin/profile`, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-  //       if (res.data) {
-  //         setAdminInfo({
-  //           name: `${res.data.firstName || 'Admin'} ${res.data.lastName || ''}`,
-  //           email: res.data.email || '',
-  //           image: res.data.profilePicture || null
-  //         });
-  //       }
-  //     } catch (err) { console.warn("Profile fetch failed."); }
-  //   };
-
-  //   const fetchUnseen = async () => {
-  //     try {
-  //       const token = localStorage.getItem("token");
-  //       if (!token) return;
-
-  //       const res = await axios.get(`${API_URL}/api/orders/admin/unseen-count`, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-
-  //       const count = res.data?.unseenCount || 0;
-
-  //       // CRITICAL FIX: Only update the state if we aren't currently on the orders page
-  //       // This prevents the refresh "re-showing" the badge after the reset logic ran
-  //       const currentTab = localStorage.getItem("admin_active_tab");
-  //       if (currentTab !== "orders") {
-  //         setUnseenCount(count);
-  //         localStorage.setItem("admin_unseen_count", count.toString());
-  //       } else {
-  //         // If we ARE on orders, keep it 0 and sync DB if necessary
-  //         setUnseenCount(0);
-  //         localStorage.setItem("admin_unseen_count", "0");
-  //       }
-  //     } catch (err) { console.error("Unseen count error", err); }
-  //   };
-
-  //   fetchAdminProfile();
-  //   fetchUnseen();
-  // }, []); // Run only on mount
-
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = "/";
-  };
-
-  const renderContent = () => {
-    switch (activePage) {
-      case "dashboard": return <AdminDashboardContent />;
-      case "users": return <UsersPage />;
-      case "restaurants": return <RestaurantsPage />;
-      case "categories": return <Category />;
-      case "orders": return <OrdersPage />;
-      case "payment": return <Payments />;
-      case "analytics": return <Analytics />;
-      case "reviews": return <AdminReviews />;
-      case "system-settings": return <SystemSettings />;
-      case "my-profile": return <ProfileSettings />;
-      default: return <AdminDashboardContent />;
-    }
-  };
-
-  return (
-    <div className={`flex w-full min-h-screen ${darkMode ? "dark" : ""}`}>
-      <div className="flex w-full min-h-screen bg-slate-50 dark:bg-[#0F172A] transition-colors duration-300">
-
-        {/* Sidebar */}
-        <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col fixed h-full z-20">
-          <div className="p-8">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-                <FiActivity size={24} />
-              </div>
-              <div>
-                <h1 className="text-xl font-black dark:text-white uppercase leading-none">Addis<span className="text-indigo-600">Eats</span></h1>
-                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">{t("centralAdmin")}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* <div className="px-6 mb-6">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-              <img
-                src={adminInfo.image || `https://ui-avatars.com/api/?name=${adminInfo.name}&background=4F46E5&color=fff`}
-                alt="Admin"
-                className="w-10 h-10 rounded-xl object-cover border-2 border-white dark:border-slate-700 shadow-sm"
-              />
-              <div className="overflow-hidden">
-                <p className="text-xs font-black dark:text-white truncate uppercase tracking-tight">{adminInfo.name}</p>
-                <p className="text-[9px] font-bold text-slate-400 truncate">{adminInfo.email}</p>
-              </div>
-            </div>
-          </div> */}
-
-          <nav className="flex-1 px-4 space-y-1 overflow-y-auto pb-10">
-            <SidebarItem icon={<FiHome />} label={t("overview")} active={activePage === "dashboard"} onClick={() => setActivePage("dashboard")} />
-            <SidebarItem icon={<FiUsers />} label={t("users")} active={activePage === "users"} onClick={() => setActivePage("users")} />
-            <SidebarItem icon={<FiShoppingBag />} label={t("restaurants")} active={activePage === "restaurants"} onClick={() => setActivePage("restaurants")} />
-            <SidebarItem icon={<FiGrid />} label={t("categories")} active={activePage === "categories"} onClick={() => setActivePage("categories")} />
-            <SidebarItem icon={<FiFileText />} label={t("orders")} active={activePage === "orders"} onClick={() => setActivePage("orders")} badge={unseenCount} />
-            <SidebarItem icon={<FaCreditCard />} label={t("payments")} active={activePage === "payment"} onClick={() => setActivePage("payment")} />
-            <SidebarItem icon={<FiTrendingUp />} label={t("analytics")} active={activePage === "analytics"} onClick={() => setActivePage("analytics")} />
-            <SidebarItem icon={<FiMessageSquare />} label={t("reviews")} active={activePage === "reviews"} onClick={() => setActivePage("reviews")} />
-
-            <div>
-              <button
-                onClick={() => setSettingsOpen(!settingsOpen)}
-                className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all group ${(activePage === "system-settings" || activePage === "my-profile") ? "bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}
-              >
-                <div className="flex items-center gap-4">
-                  <FiSettings className={`text-xl ${(activePage === "system-settings" || activePage === "my-profile") ? "text-indigo-600" : "text-slate-400 group-hover:text-indigo-500"}`} />
-                  <span className="font-bold text-sm tracking-tight">{t("settings")}</span>
-                </div>
-                <FiChevronDown className={`transition-transform duration-300 ${settingsOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {settingsOpen && (
-                <div className="mt-1 ml-6 space-y-1 animate-in slide-in-from-top-2 duration-300">
-                  <SidebarItem icon={<FiTool size={16} />} label={t("systemSettings")} active={activePage === "system-settings"} onClick={() => setActivePage("system-settings")} />
-                  <SidebarItem icon={<FiUser size={16} />} label={t("myProfile")} active={activePage === "my-profile"} onClick={() => setActivePage("my-profile")} />
-                </div>
-              )}
-            </div>
-          </nav>
-
-          <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
-            <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all font-semibold text-sm">
-              {darkMode ? <><FiSun className="text-yellow-500" /> {t("lightMode")}</> : <><FiMoon className="text-indigo-500" /> {t("nightMode")}</>}
-            </button>
-            <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 font-semibold text-sm hover:bg-rose-100 dark:hover:bg-rose-900/20 transition-all">
-              <FiLogOut /> {t("logout")}
-            </button>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 ml-72 p-8 lg:p-12">
-          <header className="flex justify-between items-start mb-10">
-            <div>
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-none">
-                {activePage === "dashboard" ? t("platformAnalytics") :
-                  activePage === "system-settings" ? t("systemSettings") :
-                    activePage === "my-profile" ? t("myProfile") : t(activePage)}
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-2">{t("welcomeBackAdmin")}</p>
-            </div>
-
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <button onClick={() => setOpenLang(!openLang)} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-all text-xs font-black uppercase text-slate-600 dark:text-slate-300">
-                  <FiGlobe className="text-indigo-600" />
-                  {i18n.language === "am" ? "አማርኛ" : "English"}
-                  <FiChevronDown className={`transition-transform ${openLang ? 'rotate-180' : ''}`} />
-                </button>
-                {openLang && (
-                  <div className="absolute right-0 mt-3 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                    <button onClick={() => { i18n.changeLanguage("en"); setOpenLang(false); }} className="flex items-center gap-3 w-full px-5 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-white border-b border-slate-50 dark:border-slate-800">🇺🇸 English</button>
-                    <button onClick={() => { i18n.changeLanguage("am"); setOpenLang(false); }} className="flex items-center gap-3 w-full px-5 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-white">🇪🇹 አማርኛ</button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header>
-
-          <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {renderContent()}
-          </section>
-        </main>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------- DASHBOARD CONTENT SUB-COMPONENT ---------------- */
-function AdminDashboardContent() {
-  const { t } = useTranslation();
-  const [orders, setOrders] = useState([]);
-  const [restaurants, setRestaurants] = useState([]);
-  const [selectedRest, setSelectedRest] = useState("ALL");
+const FavoritesPage = () => {
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const endpoint = selectedRest === "ALL"
-          ? `${API_URL}/api/orders`
-          : `${API_URL}/api/orders/restaurant/${selectedRest}`;
+    fetchFavorites();
+  }, []);
 
-        const [ordersRes, restRes] = await Promise.all([
-          axios.get(endpoint, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}/api/restaurants`)
-        ]);
-        setOrders(ordersRes.data || []);
-        setRestaurants(restRes.data || []);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
-    };
-    fetchData();
-  }, [selectedRest, token]);
+  const fetchFavorites = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get("https://multi-reataurant-1.onrender.com/api/user/favorites", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFavorites(res.data.favorites || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const stats = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const todayOrders = orders.filter(o => o.createdAt?.slice(0, 10) === today);
-    const revenue = todayOrders.reduce((sum, o) => sum + (o.adminCommission || 0), 0);
-    return {
-      totalToday: todayOrders.length,
-      revenueToday: revenue,
-      pending: todayOrders.filter(o => o.orderStatus === "PENDING").length,
-      delivered: todayOrders.filter(o => o.orderStatus === "DELIVERED").length
-    };
-  }, [orders]);
+  const filteredFavorites =
+    filter === "all"
+      ? favorites
+      : favorites.filter((fav) => fav.type === filter);
 
-  if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-indigo-600"></div></div>;
+  /* ================= NAVIGATION LOGIC (UNTOUCHED) ================= */
+  const handleNavigate = (fav) => {
+    if (fav.type === "restaurant") {
+      navigate(`/restaurant/${fav.restaurant._id}`);
+    } else if (fav.type === "dish") {
+      navigate(`/restaurant/${fav.restaurant._id}`, {
+        state: { dishId: fav.dish._id, categoryId: fav.dish.categoryId?._id },
+      });
+    }
+  };
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-end">
-        <div className="relative group">
-          <FaStore className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <select
-            value={selectedRest}
-            onChange={(e) => setSelectedRest(e.target.value)}
-            className="pl-12 pr-10 py-3 bg-white dark:bg-slate-800 dark:text-white rounded-2xl shadow-sm border-none font-bold text-sm min-w-[250px] appearance-none focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
-          >
-            <option value="ALL">{t("allRestaurants")}</option>
-            {restaurants?.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
-          </select>
-          <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+    <div className="min-h-screen bg-[#f8fafc] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+          <div>
+            <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+              <Heart className="text-red-500 fill-red-500" size={32} />
+              Your Favorites
+            </h2>
+            <p className="text-gray-500 mt-2 text-lg">Quick access to the flavors you love most.</p>
+          </div>
+
+          {/* Modern Tab-style Filter */}
+          <div className="inline-flex p-1 bg-gray-200/50 rounded-2xl backdrop-blur-sm">
+            {[
+              { id: "all", label: "All", icon: <Utensils size={16} /> },
+              { id: "restaurant", label: "Restaurants", icon: <Store size={16} /> },
+              { id: "dish", label: "Dishes", icon: <Pizza size={16} /> },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${filter === tab.id
+                  ? "bg-white text-orange-600 shadow-sm scale-105"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                  }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title={t("dailyOrders")} value={stats.totalToday} icon={<FiShoppingBag />} color="blue" />
-        <StatCard title={t("platformRevenue")} value={`ETB ${stats.revenueToday.toLocaleString()}`} icon={<FiTrendingUp />} color="emerald" />
-        <StatCard title={t("pending")} value={stats.pending} icon={<FiClock />} color="orange" />
-        <StatCard title={t("successful")} value={stats.delivered} icon={<FiCheckCircle />} color="indigo" />
-      </div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 text-orange-500 animate-spin mb-4" />
+            <h3 className="text-xl font-medium text-gray-700 animate-pulse">
+              Loading your favorites...
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12 w-full">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-64 bg-gray-200 rounded-3xl animate-pulse" />
+              ))}
+            </div>
+          </div>
+        ) : filteredFavorites.length === 0 ? (
+          /* Modern Empty State */
+          <div className="text-center py-32 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+            <div className="bg-gray-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Heart className="text-gray-300" size={48} />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800">No favorites yet</h3>
+            <p className="text-gray-500 mt-2 max-w-xs mx-auto">
+              Tap the heart icon on any restaurant or dish to see them here.
+            </p>
+            <button
+              onClick={() => navigate("/")}
+              className="mt-8 px-8 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition shadow-lg shadow-orange-200"
+            >
+              Explore Menu
+            </button>
+          </div>
+        ) : (
+          /* Favorites Grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredFavorites.map((fav) => {
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <Card title={t("systemOrderStream")} subtitle={t("recentTransactions")}>
-            <div className="mt-6 space-y-4">
-              {orders?.slice(0, 6).map((o) => (
-                <div key={o._id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 text-xs">
-                      #{o._id?.slice(-4).toUpperCase()}
+              /* RESTAURANT CARD - Horizontal Sleek Design */
+              if (fav.type === "restaurant") {
+                return (
+                  <div
+                    key={fav._id}
+                    onClick={() => handleNavigate(fav)}
+                    className="group cursor-pointer bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 transition-all duration-300 flex items-center gap-5 relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ArrowRight className="text-orange-500" size={20} />
                     </div>
+                    {fav.restaurant?.image ? (
+                      <img
+                        src={fav.restaurant.image}
+                        alt={fav.restaurant.name}
+                        className="w-20 h-20 rounded-2xl object-cover ring-4 ring-gray-50 group-hover:ring-orange-50"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-black text-2xl shadow-inner">
+                        {fav.restaurant?.name?.charAt(0) || "R"}
+                      </div>
+                    )}
                     <div>
-                      <p className="font-bold text-sm dark:text-white">{o.restaurantId?.name || "Restaurant"}</p>
-                      <p className="text-[10px] uppercase font-black text-slate-400">
-                        {o.customerName?.firstName || "Guest"} • {o.createdAt ? new Date(o.createdAt).toLocaleTimeString() : "--:--"}
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">Restaurant</span>
+                      <h3 className="font-bold text-xl text-gray-800 mt-1 group-hover:text-orange-600 transition-colors">
+                        {fav.restaurant?.name}
+                      </h3>
+                      <p className="text-gray-400 text-sm flex items-center gap-1">
+                        Click to view menu
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-black text-slate-900 dark:text-white text-sm">ETB {o.totalPrice || 0}</p>
-                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${o.orderStatus === "DELIVERED" ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"}`}>
-                      {o.orderStatus}
-                    </span>
+                );
+              }
+
+              /* DISH CARD - Visual Focus Design */
+              if (fav.type === "dish") {
+                return (
+                  <div
+                    key={fav._id}
+                    onClick={() => handleNavigate(fav)}
+                    className="group cursor-pointer bg-white rounded-3xl shadow-sm border border-gray-100 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 transition-all duration-300 overflow-hidden flex flex-col"
+                  >
+                    <div className="relative h-48 overflow-hidden">
+                      {fav.dish?.image ? (
+                        <img
+                          src={fav.dish.image}
+                          alt={fav.dish.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 font-medium">
+                          No Image Available
+                        </div>
+                      )}
+                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full shadow-sm">
+                        <p className="text-orange-600 font-black text-sm">
+                          {fav.dish?.price} ETB
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                        {fav.dish?.category || "Dish"}
+                      </span>
+                      <h3 className="font-bold text-xl text-gray-800 mt-2 group-hover:text-orange-600 transition-colors">
+                        {fav.dish?.name}
+                      </h3>
+                      <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-gray-500 text-sm">
+                          <Store size={14} />
+                          <span className="truncate max-w-[120px]">{fav.restaurant?.name || "Unknown"}</span>
+                        </div>
+                        <button className="text-orange-500 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                          Order <ArrowRight size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
+                );
+              }
 
-        <div className="space-y-6">
-          <Card title={t("platformPulse")}>
-            <div className="space-y-4 mt-4">
-              <StatusRow label={t("activeRestaurants")} value={restaurants?.length || 0} color="blue" />
-              <StatusRow label={t("failedPayments")} value={orders?.filter(o => o.paymentStatus === "FAILED").length || 0} color="orange" />
-            </div>
-          </Card>
-        </div>
+              return null;
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
 
-/* ---------------- UI HELPERS ---------------- */
-
-function SidebarItem({ icon, label, active, onClick, badge }) {
-  return (
-    <button onClick={onClick} className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all group ${active ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
-      <div className="flex items-center gap-4">
-        <span className={`text-xl ${active ? "text-white" : "text-slate-400 group-hover:text-indigo-500"}`}>{icon}</span>
-        <span className="font-bold text-sm tracking-tight">{label}</span>
-      </div>
-      {badge > 0 && <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg animate-pulse">{badge}</span>}
-    </button>
-  );
-}
-
-function StatCard({ title, value, icon, color }) {
-  const colors = {
-    blue: "text-blue-600 bg-blue-50 dark:bg-blue-900/20",
-    emerald: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20",
-    orange: "text-orange-600 bg-orange-50 dark:bg-orange-900/20",
-    indigo: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20",
-  };
-  return (
-    <div className="bg-white dark:bg-slate-900 p-7 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-lg">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${colors[color]}`}>{icon}</div>
-      <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">{title}</p>
-      <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{value}</h2>
-    </div>
-  );
-}
-
-function Card({ children, title, subtitle, className = "" }) {
-  return (
-    <div className={`bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 ${className}`}>
-      <h3 className="text-lg font-black tracking-tight dark:text-white uppercase leading-none">{title}</h3>
-      {subtitle && <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{subtitle}</p>}
-      {children}
-    </div>
-  );
-}
-
-function StatusRow({ label, value, color }) {
-  const dots = { blue: "bg-blue-500", orange: "bg-orange-500", emerald: "bg-emerald-500" };
-  return (
-    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
-      <div className="flex items-center gap-3">
-        <div className={`w-2 h-2 rounded-full ${dots[color]}`}></div>
-        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{label}</span>
-      </div>
-      <span className="font-black text-lg dark:text-white">{value}</span>
-    </div>
-  );
-}
+export default FavoritesPage;
