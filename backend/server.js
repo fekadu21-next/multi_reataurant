@@ -33,7 +33,7 @@ const __dirname = path.dirname(__filename);
 /* ================= MIDDLEWARE ================= */
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://your-frontend.vercel.app" // will update later
+  "https://adisseats.vercel.app" // will update later
 ];
 
 app.use(
@@ -78,7 +78,7 @@ export const io = new Server(httpServer, {
   cors: {
     origin: [
       "http://localhost:5173",
-      "https://your-frontend.vercel.app" // update later
+      "https://adisseats.vercel.app" // update later
     ],
     credentials: true,
   },
