@@ -149,6 +149,25 @@ export const getFavorites = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    const API_URL =
+      process.env.API_URL || "https://multi-reataurant-1.onrender.com";
+
+    // 🔥 Normalizer (FIXS ALL IMAGE ISSUES)
+    const normalizeImage = (img) => {
+      if (!img) return null;
+
+      // already full URL
+      if (img.startsWith("http")) return img;
+
+      // already correct format
+      if (img.startsWith("/uploads")) {
+        return `${API_URL}${img}`;
+      }
+
+      // filename only (your restaurant case)
+      return `${API_URL}/uploads/${img}`;
+    };
+
     const user = await User.findById(userId)
       .populate({
         path: "favorites.restaurantId",
@@ -171,24 +190,25 @@ export const getFavorites = async (req, res) => {
     const favorites = user.favorites.map((fav) => {
       const restaurant = fav.restaurantId
         ? {
-            _id: fav.restaurantId._id,
-            name: fav.restaurantId.name,
-            // ✅ IMPORTANT: return ONLY relative path
-            image: fav.restaurantId.image || null,
-          }
+          _id: fav.restaurantId._id,
+          name: fav.restaurantId.name,
+
+          // ✅ FIXED HERE (IMPORTANT)
+          image: normalizeImage(fav.restaurantId.image),
+        }
         : null;
 
       const dish = fav.dishId
         ? {
-            _id: fav.dishId._id,
-            name: fav.dishId.name,
-            price: fav.dishId.price,
-            // ✅ IMPORTANT: return ONLY relative path
-            image: fav.dishId.image || null,
-            category: fav.dishId.categoryId
-              ? fav.dishId.categoryId.name
-              : null,
-          }
+          _id: fav.dishId._id,
+          name: fav.dishId.name,
+          price: fav.dishId.price,
+
+          // ✅ FIXED HERE (IMPORTANT)
+          image: normalizeImage(fav.dishId.image),
+
+          category: fav.dishId.categoryId?.name || null,
+        }
         : null;
 
       return {
