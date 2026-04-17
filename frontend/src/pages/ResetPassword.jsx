@@ -37,7 +37,7 @@ export default function ResetPassword() {
 
     setIsLoading(true);
     try {
-      await axios.put(`http://localhost:5000/api/auth/reset-password/${token}`, { password });
+      await axios.put(`https://multi-reataurant-1.onrender.com/api/auth/reset-password/${token}`, { password });
       setIsSuccess(true);
       // Auto-redirect to login after 3 seconds
       setTimeout(() => navigate("/login"), 3000);

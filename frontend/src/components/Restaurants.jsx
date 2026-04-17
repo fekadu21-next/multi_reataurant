@@ -11,7 +11,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useTranslation, Trans } from "react-i18next";
-const API_URL = "http://localhost:5000";
+const API_URL = "https://multi-reataurant-1.onrender.com";
 
 const Restaurants = () => {
   const { t } = useTranslation();

@@ -48,9 +48,8 @@ const ProfileDropdown = ({ user, onClose }) => {
     localUser?.profileImage?.startsWith("http")
       ? localUser.profileImage
       : localUser?.profileImage
-        ? `http://localhost:5000${localUser.profileImage}`
+        ? `https://multi-reataurant-1.onrender.com${localUser.profileImage}`
         : null;
-
   // Reusable component for menu items
   const MenuItem = ({ icon: Icon, label, onClick, variant = "default" }) => (
     <button

@@ -22,7 +22,7 @@ export default function PaymentSuccess() {
         console.log("Sending request to backend...");
 
         const res = await axios.post(
-          "http://localhost:5000/api/payments/confirm",
+          "https://multi-reataurant-1.onrender.com/api/payments/confirm",
           { transactionRef: tx_ref }
         );
 

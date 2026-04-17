@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-const API_BASE_URL = "http://localhost:5000";
-/* ================= THEME CONSTANTS ================= */
+const API_BASE_URL = "https://multi-reataurant-1.onrender.com";
 const COLORS = {
   primary: "#3b82f6",
   success: "#10b981",

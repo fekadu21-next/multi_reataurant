@@ -21,8 +21,8 @@ import AdminReviews from "./Reviews";
 import SystemSettings from "./SystemSettings";
 import ProfileSettings from "./ProfileSettings";
 
-const API_URL = "http://localhost:5000";
-const SOCKET_URL = "http://localhost:5000";
+const API_URL = "https://multi-reataurant-1.onrender.com";
+const SOCKET_URL = "https://multi-reataurant-1.onrender.com";
 
 export default function AdminDashboard() {
   const { t, i18n } = useTranslation();

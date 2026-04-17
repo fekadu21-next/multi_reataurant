@@ -21,7 +21,7 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://multi-reataurant-1.onrender.com/api";
 
 /**
  * OrdersPage Component

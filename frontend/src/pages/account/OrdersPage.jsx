@@ -47,7 +47,7 @@ const OrdersPageAccount = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/user/myorders", {
+      const res = await axios.get("https://multi-reataurant-1.onrender.com/api/user/myorders", {
         headers: { Authorization: `Bearer ${token} ` },
       });
       setOrders(res.data.orders);
@@ -64,7 +64,7 @@ const OrdersPageAccount = () => {
   const handleReorder = async (orderId) => {
     try {
       await axios.post(
-        `http://localhost:5000/api/user/orders/reorder/${orderId}`,
+        `https://multi-reataurant-1.onrender.com/api/user/orders/reorder/${orderId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -82,12 +82,11 @@ const OrdersPageAccount = () => {
     try {
 
       const res = await axios.get(
-        `http://localhost:5000/api/reviews/check/${orderId}`,
+        `https://multi-reataurant-1.onrender.com/api/reviews/check/${orderId}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-
       setReviewedOrders(prev => ({
         ...prev,
         [orderId]: res.data.reviewed
@@ -97,7 +96,6 @@ const OrdersPageAccount = () => {
       console.log(err);
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans text-slate-900">
 

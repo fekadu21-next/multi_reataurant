@@ -34,7 +34,7 @@ const Navbar = () => {
   // ============================= FETCH USER & NOTIFICATIONS
   const fetchUser = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/user/settings", {
+      const res = await axios.get("https://multi-reataurant-1.onrender.com/api/user/settings", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUser(res.data.user);
@@ -45,7 +45,7 @@ const Navbar = () => {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/notification", {
+      const res = await axios.get("https://multi-reataurant-1.onrender.com/api/notification", {
         headers: { Authorization: `Bearer ${token}`, "Cache-Control": "no-cache" },
       });
       const uniqueNotifications = Array.from(
@@ -70,7 +70,7 @@ const Navbar = () => {
     try {
       if (!notif.isRead) {
         await axios.put(
-          `http://localhost:5000/api/notification/${notif._id}/read`,
+          `https://multi-reataurant-1.onrender.com/api/notification/${notif._id}/read`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -113,9 +113,11 @@ const Navbar = () => {
   const firstLetter = firstName.charAt(0).toUpperCase();
   const role = user?.role;
   const unseenNotifications = notifications.filter((n) => !n.isRead);
+  console.log("Profile Image:", user?.profileImage);
   const uniqueUnseenNotifications = Array.from(
     new Map(unseenNotifications.map((n) => [n.orderId._id, n])).values()
   );
+
   const unreadCount = uniqueUnseenNotifications.length;
 
   return (
@@ -294,7 +296,7 @@ const Navbar = () => {
                     <div className="w-10 h-10 relative">
                       {user?.profileImage ? (
                         <img
-                          src={`http://localhost:5000${user.profileImage}`}
+                          src={`https://multi-reataurant-1.onrender.com${user.profileImage}`}
                           alt="Profile"
                           className="w-full h-full rounded-xl object-cover border border-gray-200 dark:border-slate-700 shadow-sm"
                         />

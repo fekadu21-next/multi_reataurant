@@ -18,7 +18,7 @@ export default function ForgotPassword() {
 
     try {
       // Replace with your actual API endpoint
-      await axios.post("http://localhost:5000/api/auth/forgot-password", { email });
+      await axios.post("https://multi-reataurant-1.onrender.com/api/auth/forgot-password", { email });
       setIsSubmitted(true);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong. Please try again.");

@@ -9,12 +9,13 @@ export default function AskQuestionModal({ onClose }) {
   const [email, setEmail] = useState("");
   const [question, setQuestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const API_URL = "https://multi-reataurant-1.onrender.com";
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await axios.post("http://localhost:5000/api/ask-question", {
+      await axios.post("https://multi-reataurant-1.onrender.com/api/ask-question", {
+
         name,
         email,
         question

@@ -6,7 +6,7 @@ import {
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-const API_URL = "http://localhost:5000";
+const API_URL = "https://multi-reataurant-1.onrender.com";
 
 export default function AdminReviews() {
   const { t } = useTranslation();

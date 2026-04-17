@@ -29,7 +29,7 @@ import ProfileSettings from "./Myprofile";
 import SalesAnalytics from "./SalesAnalytics";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
-const API_URL = "http://localhost:5000";
+const API_URL = "https://multi-reataurant-1.onrender.com";
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const [activePage, setActivePage] = useState(() => {

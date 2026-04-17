@@ -14,7 +14,7 @@ import {
   ChevronUp
 } from "lucide-react";
 
-const API = "http://localhost:5000/api/user";
+const API = "https://multi-reataurant-1.onrender.com/api/user";
 
 const AccountSettingsPage = () => {
   const token = localStorage.getItem("token");
@@ -200,7 +200,7 @@ const AccountSettingsPage = () => {
                 <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-50 shadow-inner bg-gray-100 flex items-center justify-center">
                   {profileImage ? (
                     <img
-                      src={`http://localhost:5000${profileImage}`}
+                      src={`https://multi-reataurant-1.onrender.com${profileImage}`}
                       alt="Profile"
                       className="w-full h-full object-cover transition duration-300 group-hover:scale-110"
                     />

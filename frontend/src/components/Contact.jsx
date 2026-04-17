@@ -36,7 +36,7 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      await axios.post("http://localhost:5000/api/contact", formData);
+      await axios.post("https://multi-reataurant-1.onrender.com/api/contact", formData);
       setIsSubmitted(true);
       setFormData({
         fullName: "",
@@ -234,8 +234,8 @@ const Contact = () => {
                       type="submit"
                       disabled={isSubmitting}
                       className={`w-full py-6 rounded-3xl font-black text-xl tracking-tight transition-all shadow-2xl ${isSubmitting
-                          ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                          : "bg-orange-500 text-white hover:bg-orange-600 hover:shadow-orange-500/30 active:scale-[0.98]"
+                        ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+                        : "bg-orange-500 text-white hover:bg-orange-600 hover:shadow-orange-500/30 active:scale-[0.98]"
                         }`}
                     >
                       {isSubmitting ? "Sending..." : "Send Message"}

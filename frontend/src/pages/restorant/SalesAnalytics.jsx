@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://multi-reataurant-1.onrender.com";
 
 export default function SalesAnalytics({ restaurantId }) {
   const { t } = useTranslation();

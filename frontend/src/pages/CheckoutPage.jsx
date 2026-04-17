@@ -5,7 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://multi-reataurant-1.onrender.com/api";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -416,7 +416,6 @@ export default function CheckoutPage() {
               Your order
               <div className="absolute bottom-0 left-0 w-24 h-[3px] bg-[#ffde00]"></div>
             </h2>
-
             <div className="w-full text-[15px] mb-6">
               <div className="flex justify-between font-bold border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 dark:text-white">
                 <span>Product</span>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Camera, Lock, User, Mail, Save, Key, ShieldCheck, ChevronRight, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-const API = "http://localhost:5000/api/user";
+const API = "https://multi-reataurant-1.onrender.com/api/user";
 
 export default function ProfileSettings() {
   const token = localStorage.getItem("token");
@@ -18,7 +18,6 @@ export default function ProfileSettings() {
   useEffect(() => {
     fetchProfile();
   }, []);
-
   const fetchProfile = async () => {
     try {
       const res = await axios.get(`${API}/settings`, {
@@ -119,7 +118,7 @@ export default function ProfileSettings() {
                 <div className="group relative">
                   <div className="absolute -inset-1 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-full blur opacity-25 group-hover:opacity-60 transition duration-1000"></div>
                   <img
-                    src={preview ? `http://localhost:5000${preview}` : "https://via.placeholder.com/150"}
+                    src={preview ? `https://multi-reataurant-1.onrender.com${preview}` : "https://via.placeholder.com/150"}
                     alt="User"
                     className="relative w-32 h-32 rounded-3xl object-cover border-4 border-white dark:border-slate-800 shadow-2xl"
                   />

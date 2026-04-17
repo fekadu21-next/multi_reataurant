@@ -17,7 +17,7 @@ import {
 } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 
-const API_URL = "http://localhost:5000/api/orders";
+const API_URL = "https://multi-reataurant-1.onrender.com/api/orders";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);

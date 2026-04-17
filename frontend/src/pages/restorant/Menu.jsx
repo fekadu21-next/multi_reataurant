@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FiEdit, FiTrash2, FiPlus, FiGrid, FiList, FiCheckCircle, FiXCircle, FiTag, FiDollarSign } from "react-icons/fi";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://multi-reataurant-1.onrender.com";
 import { useTranslation } from "react-i18next";
 export default function Menu() {
   const { t } = useTranslation();

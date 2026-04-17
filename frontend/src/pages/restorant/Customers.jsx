@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FiUsers, FiShoppingBag, FiCreditCard, FiClock, FiMail } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
-const API_URL = "http://localhost:5000";
+const API_URL = "https://multi-reataurant-1.onrender.com";
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);

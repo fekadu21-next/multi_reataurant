@@ -18,7 +18,7 @@ const FavoritesPage = () => {
   const fetchFavorites = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/user/favorites", {
+      const res = await axios.get("https://multi-reataurant-1.onrender.com/api/user/favorites", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setFavorites(res.data.favorites || []);
@@ -70,8 +70,8 @@ const FavoritesPage = () => {
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 ${filter === tab.id
-                    ? "bg-white text-orange-600 shadow-sm scale-105"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                  ? "bg-white text-orange-600 shadow-sm scale-105"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
                   }`}
               >
                 {tab.icon}

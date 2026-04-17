@@ -8,7 +8,7 @@ import { useCart } from "../context/CartContext";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://multi-reataurant-1.onrender.com";
 
 export default function Index() {
   const navigate = useNavigate();

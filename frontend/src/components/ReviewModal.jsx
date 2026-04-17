@@ -23,7 +23,7 @@ const ReviewModal = ({ orderId, restaurantName, onClose, onSuccess }) => {
       setLoading(true);
 
       await axios.post(
-        `http://localhost:5000/api/reviews/create/${orderId}`,
+        `https://multi-reataurant-1.onrender.com/api/reviews/create/${orderId}`,
         {
           rating,
           comment,

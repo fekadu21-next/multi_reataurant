@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://multi-reataurant-1.onrender.com";
 
 /* ================= COMPONENT ================= */
 
@@ -190,20 +190,17 @@ export default function PaymentAnalytics() {
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           </div>
-
           <button className="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30">
             <Download size={20} />
           </button>
         </div>
       </header>
-
       {/* --- TOP KPI ROW --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
         <MainStat label={t("platformGross")} value={globalStats.gross} sub="Total processed volume" icon={<DollarSign />} color="blue" />
         <MainStat label={t("earnedCommission")} value={globalStats.comm} sub="Your 10% platform share" icon={<Percent />} color="emerald" />
         <MainStat label={t("restaurantPayouts")} value={globalStats.net} sub="Net amount to be settled" icon={<ArrowUpRight />} color="purple" />
       </div>
-
       {/* --- PAYMENT METHOD MATRIX GRID --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
         {paymentMetrics.map((method, idx) => (

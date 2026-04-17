@@ -5,8 +5,7 @@ import {
 } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 
-const API_URL = "http://localhost:5000";
-
+const API_URL = "https://multi-reataurant-1.onrender.com";
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");

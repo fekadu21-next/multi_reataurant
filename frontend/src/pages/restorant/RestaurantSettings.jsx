@@ -26,7 +26,7 @@ import { useTranslation } from "react-i18next";
  * Real-time feedback, Dark Mode support, and Logic Preservation.
  */
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://multi-reataurant-1.onrender.com/api";
 
 export default function RestaurantSettings() {
   // --- AUTH & CONTEXT LOGIC ---
@@ -76,7 +76,7 @@ export default function RestaurantSettings() {
         });
 
         if (data.image) {
-          setPreview(`http://localhost:5000${data.image}`);
+          setPreview(`https://multi-reataurant-1.onrender.com${data.image}`);
         }
 
         setLoading(false);
