@@ -39,35 +39,20 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (mobile apps, postman)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      // IMPORTANT: DO NOT throw error
-      return callback(null, false);
+      return callback(null, false); // ❌ never throw error
     },
     credentials: true,
   })
 );
 
-// handle preflight requests properly
+// IMPORTANT: preflight support
 app.options("*", cors());
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 /* ================= DB ================= */
