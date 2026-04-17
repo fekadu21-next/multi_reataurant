@@ -38,31 +38,20 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
+    // allow mobile apps / postman (no origin)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    return callback(null, false); // ❌ never throw error
+    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
 };
 
-// ✅ Apply CORS
 app.use(cors(corsOptions));
-
-// ✅ Handle preflight requests properly
-app.options(/.*/, cors(corsOptions));
-
-/* ================= EXTRA HEADERS (SAFE FIX) ================= */
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://adisseats.vercel.app");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  next();
-});
+app.options("*", cors(corsOptions));
 
 /* ================= MIDDLEWARE ================= */
 app.use(express.json());
