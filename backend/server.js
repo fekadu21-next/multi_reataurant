@@ -10,9 +10,9 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import chapaRoutes from "./routes/chapaRoutes.js";
-import userRoutes from "./routes/userRoutes.js"
-import customerRoutes from "./routes/customerRoutes.js"
-import notificationRoutes from "./routes/notificationRoutes.js"
+import userRoutes from "./routes/userRoutes.js";
+import customerRoutes from "./routes/customerRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import recommendationRoutes from "./routes/recommendationRoutes.js";
 import questionRoutes from "./routes/questionRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
@@ -30,33 +30,47 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/* ================= MIDDLEWARE ================= */
+/* ================= CORS CONFIG ================= */
 const allowedOrigins = [
   "http://localhost:5173",
   "https://adisseats.vercel.app",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
 
-      return callback(null, false); // ❌ never throw error
-    },
-    credentials: true,
-  })
-);
+    return callback(null, false); // ❌ never throw error
+  },
+  credentials: true,
+};
 
-// IMPORTANT: preflight support
-app.options("*", cors());
+// ✅ Apply CORS
+app.use(cors(corsOptions));
+
+// ✅ Handle preflight requests properly
+app.options("*", cors(corsOptions));
+
+/* ================= EXTRA HEADERS (SAFE FIX) ================= */
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://adisseats.vercel.app");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  next();
+});
+
+/* ================= MIDDLEWARE ================= */
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 /* ================= DB ================= */
 connectDB();
+
 /* ================= ROUTES ================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/restaurants", restaurantRoutes);
@@ -73,51 +87,47 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/shipping", ShippingRoutes);
 app.use("/api", questionRoutes);
 app.use("/api", contactRoutes);
+
+/* ================= TEST ROUTE ================= */
 app.get("/", (req, res) => {
   res.send("🚀 API is running...");
 });
+
 /* ================= SERVER + SOCKET.IO ================= */
 const PORT = process.env.PORT || 5000;
 const httpServer = createServer(app);
+
 export const io = new Server(httpServer, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://adisseats.vercel.app" // update later
-    ],
+    origin: allowedOrigins,
     credentials: true,
   },
 });
+
 app.set("io", io);
+
 /* ================= ONLINE USERS TRACKING ================= */
-// Owners online
 export const onlineOwners = new Map();
-// Admins online
 export const onlineAdmins = new Map();
 
 io.on("connection", (socket) => {
   console.log("⚡ Socket connected:", socket.id);
 
-  // -------------------- OWNER --------------------
   socket.on("registerOwner", (ownerId) => {
     onlineOwners.set(ownerId, socket.id);
     console.log("Owner online:", ownerId);
   });
 
-  // -------------------- ADMIN --------------------
   socket.on("registerAdmin", (adminId) => {
     onlineAdmins.set(adminId, socket.id);
     console.log("Admin online:", adminId);
   });
 
-  // -------------------- DISCONNECT --------------------
   socket.on("disconnect", () => {
-    // Remove from owners
     onlineOwners.forEach((value, key) => {
       if (value === socket.id) onlineOwners.delete(key);
     });
 
-    // Remove from admins
     onlineAdmins.forEach((value, key) => {
       if (value === socket.id) onlineAdmins.delete(key);
     });
