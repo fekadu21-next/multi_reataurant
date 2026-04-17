@@ -152,15 +152,15 @@ export const getFavorites = async (req, res) => {
     const user = await User.findById(userId)
       .populate({
         path: "favorites.restaurantId",
-        select: "name image" // ✅ fixed
+        select: "name image",
       })
       .populate({
         path: "favorites.dishId",
         select: "name price categoryId image",
         populate: {
           path: "categoryId",
-          select: "name"
-        }
+          select: "name",
+        },
       })
       .lean();
 
@@ -168,48 +168,42 @@ export const getFavorites = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const API_URL = process.env.API_URL || "http://localhost:5000";
-
     const favorites = user.favorites.map((fav) => {
-
       const restaurant = fav.restaurantId
         ? {
-          _id: fav.restaurantId._id,
-          name: fav.restaurantId.name,
-          image: fav.restaurantId.image
-            ? `${API_URL}/uploads/${fav.restaurantId.image}` // ✅ fixed
-            : null
-        }
+            _id: fav.restaurantId._id,
+            name: fav.restaurantId.name,
+            // ✅ IMPORTANT: return ONLY relative path
+            image: fav.restaurantId.image || null,
+          }
         : null;
 
       const dish = fav.dishId
         ? {
-          _id: fav.dishId._id,
-          name: fav.dishId.name,
-          price: fav.dishId.price,
-          image: fav.dishId.image
-            ? `${API_URL}${fav.dishId.image}`
-            : null,
-          category: fav.dishId.categoryId
-            ? fav.dishId.categoryId.name
-            : null
-        }
+            _id: fav.dishId._id,
+            name: fav.dishId.name,
+            price: fav.dishId.price,
+            // ✅ IMPORTANT: return ONLY relative path
+            image: fav.dishId.image || null,
+            category: fav.dishId.categoryId
+              ? fav.dishId.categoryId.name
+              : null,
+          }
         : null;
 
       return {
         _id: fav._id,
         type: fav.type,
         restaurant,
-        dish
+        dish,
       };
     });
 
     res.status(200).json({ favorites });
-
   } catch (err) {
     res.status(500).json({
       message: "Failed to fetch favorites",
-      error: err.message
+      error: err.message,
     });
   }
 };

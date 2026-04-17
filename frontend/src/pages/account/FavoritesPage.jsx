@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Heart, Utensils, Pizza, Store, Loader2 } from "lucide-react";
+import {
+  Heart,
+  Utensils,
+  Pizza,
+  Store,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
 
 const API_BASE = "https://multi-reataurant-1.onrender.com";
 
-// ✅ FIXED IMAGE HANDLER (same logic as Restaurants page)
+/* ✅ SAFE IMAGE HANDLER (same as Restaurants page) */
 const getImageUrl = (path) => {
   if (!path) return "";
 
-  // remove localhost if backend sends it
-  const cleanedPath = path.replace("http://localhost:5000", "");
+  // already full URL
+  if (path.startsWith("http")) return path;
 
-  return `${API_BASE}${cleanedPath}`;
+  return `${API_BASE}${path}`;
 };
 
 const FavoritesPage = () => {
@@ -42,7 +49,7 @@ const FavoritesPage = () => {
 
       setFavorites(res.data.favorites || []);
     } catch (err) {
-      console.error("❌ ERROR:", err.response?.data || err.message);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -70,7 +77,7 @@ const FavoritesPage = () => {
     <div className="min-h-screen bg-[#f8fafc] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
 
-        {/* Header */}
+        {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
           <div>
             <h2 className="text-4xl font-extrabold text-gray-900 flex items-center gap-3">
@@ -82,7 +89,7 @@ const FavoritesPage = () => {
             </p>
           </div>
 
-          {/* Filter */}
+          {/* FILTER */}
           <div className="inline-flex p-1 bg-gray-200/50 rounded-2xl">
             {[
               { id: "all", label: "All", icon: <Utensils size={16} /> },
@@ -104,14 +111,16 @@ const FavoritesPage = () => {
           </div>
         </div>
 
-        {/* Loading */}
+        {/* LOADING */}
         {loading ? (
           <div className="flex flex-col items-center py-20">
             <Loader2 className="w-12 h-12 text-orange-500 animate-spin mb-4" />
-            <h3 className="text-xl text-gray-700">Loading your favorites...</h3>
+            <h3 className="text-xl text-gray-700">
+              Loading your favorites...
+            </h3>
           </div>
         ) : filteredFavorites.length === 0 ? (
-          /* Empty */
+          /* EMPTY */
           <div className="text-center py-32 bg-white rounded-3xl border-2 border-dashed">
             <Heart className="text-gray-300 mx-auto mb-4" size={48} />
             <h3 className="text-2xl font-bold">No favorites yet</h3>
@@ -123,10 +132,11 @@ const FavoritesPage = () => {
             </button>
           </div>
         ) : (
-          /* Grid */
+          /* GRID */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredFavorites.map((fav) => {
 
+              /* RESTAURANT CARD */
               if (fav.type === "restaurant") {
                 return (
                   <div
@@ -145,6 +155,7 @@ const FavoritesPage = () => {
                         {fav.restaurant?.name?.charAt(0)}
                       </div>
                     )}
+
                     <div>
                       <h3 className="font-bold text-lg">
                         {fav.restaurant?.name}
@@ -157,6 +168,7 @@ const FavoritesPage = () => {
                 );
               }
 
+              /* DISH CARD */
               if (fav.type === "dish") {
                 return (
                   <div
