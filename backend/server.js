@@ -33,8 +33,28 @@ const __dirname = path.dirname(__filename);
 /* ================= MIDDLEWARE ================= */
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://adisseats.vercel.app" // will update later
+  "https://adisseats.vercel.app",
 ];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (mobile apps, postman)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // IMPORTANT: DO NOT throw error
+      return callback(null, false);
+    },
+    credentials: true,
+  })
+);
+
+// handle preflight requests properly
+app.options("*", cors());
 
 app.use(
   cors({
