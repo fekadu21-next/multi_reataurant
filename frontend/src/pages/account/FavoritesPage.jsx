@@ -74,11 +74,12 @@ const FavoritesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#f8fafc] py-16 xl:py-24 px-4 sm:px-12 xl:px-24">
+      <div className="max-w-[1600px] mx-auto">
 
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+        {/* Increased bottom margin and gap to separate header from content effectively on desktop */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-16 xl:mb-24 gap-8">
           <div>
             <h2 className="text-4xl font-extrabold text-gray-900 flex items-center gap-3">
               <Heart className="text-red-500 fill-red-500" size={32} />
@@ -100,8 +101,8 @@ const FavoritesPage = () => {
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition ${filter === tab.id
-                    ? "bg-white text-orange-600 shadow scale-105"
-                    : "text-gray-600 hover:text-gray-900"
+                  ? "bg-white text-orange-600 shadow scale-105"
+                  : "text-gray-600 hover:text-gray-900"
                   }`}
               >
                 {tab.icon}
@@ -133,7 +134,8 @@ const FavoritesPage = () => {
           </div>
         ) : (
           /* GRID */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 xl:gap-12">
             {filteredFavorites.map((fav) => {
 
               /* RESTAURANT CARD */
@@ -142,7 +144,7 @@ const FavoritesPage = () => {
                   <div
                     key={fav._id}
                     onClick={() => handleNavigate(fav)}
-                    className="group cursor-pointer bg-white p-6 rounded-3xl shadow flex items-center gap-5"
+                    className="group cursor-pointer bg-white p-6 rounded-[32px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-slate-100 flex items-center gap-5"
                   >
                     {fav.restaurant?.image ? (
                       <img
@@ -176,12 +178,12 @@ const FavoritesPage = () => {
                     onClick={() => handleNavigate(fav)}
                     className="bg-white rounded-3xl shadow overflow-hidden"
                   >
-                    <div className="h-48">
+                    <div className="h-56 overflow-hidden">
                       {fav.dish?.image ? (
                         <img
                           src={getImageUrl(fav.dish.image)}
                           alt={fav.dish.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                       ) : (
                         <div className="h-full flex items-center justify-center">
@@ -208,7 +210,7 @@ const FavoritesPage = () => {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 
