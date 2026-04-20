@@ -238,7 +238,7 @@ export default function Index() {
         </div>
 
         {/* ======== 2. PERSONALIZED RECOMMENDATIONS ======== */}
-        <div className="max-w-[1440px] mx-auto px-6 md:px-8">
+        <div className="max-w-full mx-auto px-6 md:px-12">
           <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 md:mb-16 gap-4">
             <div className="space-y-3">
               <div className="h-1.5 w-16 bg-orange-500 rounded-full" />
@@ -294,7 +294,8 @@ export default function Index() {
         </div>
         {/* ======== 3. BROWSE BY CUISINE ======== */}
         <div className="bg-slate-900 dark:bg-black py-20 md:py-32 transition-colors duration-500">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8">
+          {/* Changed max-w-[1440px] to max-w-full */}
+          <div className="max-w-full mx-auto px-6 md:px-12">
             <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-16 uppercase">
               {t("browseCuisine")} <span className="text-orange-500 italic">Cuisine</span>
             </h2>
