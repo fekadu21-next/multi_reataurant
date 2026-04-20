@@ -271,7 +271,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#121212] transition-colors duration-300">
-      <div className="max-w-7xl mx-auto p-4 md:p-8 font-sans text-[#333] dark:text-gray-200">
+      <div className="max-full mx-auto p-4 md:p-8 font-sans text-[#333] dark:text-gray-200">
         <h1 className="text-[42px] font-normal text-center mb-10 text-[#444] dark:text-gray-100">
           {t("checkout")}
         </h1>
@@ -291,12 +291,12 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <div className="bg-[#ffde00] dark:bg-[#eab308] p-4 rounded-sm mb-12 text-[15px] text-black font-medium">
+        {/* <div className="bg-[#ffde00] dark:bg-[#eab308] p-4 rounded-sm mb-12 text-[15px] text-black font-medium">
           Have a coupon?{" "}
           <button className="font-bold hover:text-gray-700 dark:hover:text-gray-900 transition-colors">
             Click here to enter your code
           </button>
-        </div>
+        </div> */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20 items-start">
           <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-[#1e1e1e] p-1 md:p-0">
             <section className="mb-12">
