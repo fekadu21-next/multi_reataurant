@@ -297,9 +297,8 @@ export default function CheckoutPage() {
             Click here to enter your code
           </button>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          <div className="lg:col-span-7 bg-white dark:bg-[#1e1e1e] p-1 md:p-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-20 items-start">
+          <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-[#1e1e1e] p-1 md:p-0">
             <section className="mb-12">
               <h2 className="text-[28px] font-semibold mb-8 pb-1 relative dark:text-white">
                 Billing details
@@ -402,7 +401,7 @@ export default function CheckoutPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Password (optional)"
-                        className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] rounded-full px-6 py-4 focus:outline-none w-full md:w-1/2 dark:text-white"
+                        className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] rounded-full px-6 py-4 focus:outline-none w-full xl:w-2/3 dark:text-white"
                       />
                     </div>
                   )}
@@ -410,8 +409,7 @@ export default function CheckoutPage() {
               </div>
             </section>
           </div>
-
-          <div className="lg:col-span-5 bg-gray-100 dark:bg-[#1e1e1e] border border-gray-100 dark:border-gray-800 p-8 rounded-sm shadow-sm self-start">
+          <div className="lg:col-span-5 xl:col-span-4 bg-gray-100 dark:bg-[#1e1e1e] border border-gray-100 dark:border-gray-800 p-8 rounded-sm shadow-sm self-start">
             <h2 className="text-[26px] font-semibold mb-8 pb-1 relative dark:text-white">
               Your order
               <div className="absolute bottom-0 left-0 w-24 h-[3px] bg-[#ffde00]"></div>

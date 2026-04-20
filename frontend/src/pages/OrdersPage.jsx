@@ -133,7 +133,7 @@ export default function OrdersPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 pt-10">
+      <main className="max-w-full mx-auto px-4 md:px-16 lg:px-24 pt-10">
 
         {/* 2. SUCCESS MESSAGE SECTION */}
         <motion.div
@@ -161,13 +161,11 @@ export default function OrdersPage() {
         </motion.div>
 
         {/* 3. MAIN CONTENT GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-          {/* LEFT: Order Items & Payment Details */}
-          <div className="lg:col-span-8 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-16 items-start">
+          <div className="lg:col-span-8 xl:col-span-9 space-y-6">
 
             {/* PROGRESS TRACKER (Modern Addition) */}
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm overflow-hidden relative">
+            <div className="bg-white rounded-3xl p-8 xl:p-12 border border-gray-100 shadow-sm overflow-hidden relative">
               <div className="flex justify-between items-center mb-8">
                 <h3 className="font-bold text-lg">Order Status</h3>
                 <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full uppercase tracking-wider">
@@ -284,7 +282,7 @@ export default function OrdersPage() {
           </div>
 
           {/* RIGHT: Customer Sidebar */}
-          <aside className="lg:col-span-4 space-y-6">
+          <aside className="lg:col-span-4 xl:col-span-3 space-y-6">
 
             {/* ORDER INFO CARD */}
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6">

@@ -68,7 +68,8 @@ const About = () => {
 
       {/* --- STATS SECTION --- */}
       <section className="py-12 -mt-24 relative z-20 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+        {/* Expanded container for wide screens and increased vertical padding */}
+        <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 xl:gap-12 px-4 xl:px-24">
           {stats.map((stat) => (
             <div
               key={stat.id}
@@ -89,14 +90,15 @@ const About = () => {
       </section>
 
       {/* --- OUR STORY SECTION --- */}
-      <section className="py-24 px-6">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+      {/* Increased max-width and massive gap to leverage the wide horizontal space */}
+      <section className="py-32 px-6 xl:px-24">
+        <div className="max-w-[1600px] mx-auto grid md:grid-cols-2 gap-16 xl:gap-32 items-center">
           <div className="relative">
             <div className="absolute -top-4 -left-4 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl" />
             <img
               src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=2047"
               alt="Sophisticated Dining Atmosphere"
-              className="rounded-[40px] shadow-2xl relative z-10 border-8 border-white dark:border-slate-900 h-[500px] w-full object-cover"
+              className="rounded-[50px] shadow-2xl relative z-10 border-8 border-white dark:border-slate-900 h-[500px] xl:h-[650px] w-full object-cover"
             />
             <div className="absolute -bottom-10 -right-10 hidden lg:block z-20">
               <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700">
@@ -134,8 +136,8 @@ const About = () => {
       </section>
 
       {/* --- VALUES SECTION --- */}
-      <section className="py-20 bg-slate-50 dark:bg-slate-900/50 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-32 bg-slate-50 dark:bg-slate-900/50 px-6 xl:px-24">
+        <div className="max-w-[1600px] mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-orange-500 font-black text-sm uppercase tracking-[0.3em] mb-3">Core Values</h2>
             <h3 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white">
@@ -164,7 +166,8 @@ const About = () => {
 
       {/* --- FOOTER BRAGGING --- */}
       <section className="py-20 text-center border-t border-slate-100 dark:border-slate-800">
-        <h2 className="text-slate-300 dark:text-slate-800 text-6xl md:text-9xl font-black uppercase tracking-tighter select-none">
+        {/* Increased text size and letter spacing for that "editorial" look */}
+        <h2 className="text-slate-200 dark:text-slate-900 text-6xl md:text-9xl xl:text-[14rem] font-black uppercase tracking-tighter select-none opacity-50 transition-opacity duration-1000 hover:opacity-100">
           Addis Eats Ethiopia
         </h2>
       </section>

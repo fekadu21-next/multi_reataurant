@@ -65,7 +65,7 @@ const Restaurants = () => {
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[120px] -z-10 translate-x-1/2 -translate-y-1/2" />
         <div className="absolute top-40 left-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[100px] -z-10 -translate-x-1/2" />
 
-        <div className="max-w-7xl mx-auto ">
+        <div className="max-w-full mx-auto px-4 md:px-16">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
             <div className="space-y-4">
               {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 text-[10px] font-black uppercase tracking-widest">
@@ -118,7 +118,7 @@ const Restaurants = () => {
       </section >
 
       {/* --- CONTENT SECTION --- */}
-      <section className="max-w-7xl mx-auto px-6 mt-10" >
+      <section className="max-w-full mx-auto px-6 md:px-16 mt-10" >
         <div className="flex items-center gap-3 mb-10">
           <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
             <FaFilter className="text-xs" />
@@ -131,7 +131,7 @@ const Restaurants = () => {
         {/* LOADING STATE - SKELETON CARDS */}
         {
           loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-10">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="bg-white dark:bg-slate-900/50 rounded-[40px] h-[480px] animate-pulse border border-slate-100 dark:border-slate-800">
                   <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-t-[40px]" />

@@ -225,7 +225,7 @@ export default function RestaurantMenu() {
 
       {/* --- SEARCH & CATEGORY BAR --- */}
       <div className={`sticky top-0 z-[100] transition-all duration-300 ${isScrolled ? "bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl py-4 shadow-xl border-b border-gray-100 dark:border-slate-800" : "bg-white dark:bg-slate-950 py-10"}`}>
-        <div className="max-w-[1400px] mx-auto px-6 flex flex-col lg:flex-row gap-8 items-center">
+        <div className="max-w-full mx-auto px-6 md:px-12 flex flex-col lg:flex-row gap-8 items-center">
           <div className="relative w-full lg:w-[450px]">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -254,7 +254,7 @@ export default function RestaurantMenu() {
       </div>
 
       {/* --- MENU SECTION --- */}
-      <main className="max-w-[1400px] mx-auto px-6 mt-16">
+      <main className="max-w-full mx-auto px-6 md:px-12 mt-16">
         <div className="flex items-center justify-between mb-16">
           <div>
             <h2 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase">

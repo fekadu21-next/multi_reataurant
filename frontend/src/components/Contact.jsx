@@ -77,7 +77,8 @@ const Contact = () => {
   return (
     <div className="bg-white dark:bg-slate-950 min-h-screen transition-colors duration-300 font-sans">
       {/* HEADER SECTION */}
-      <section className="relative pt-32 pb-16 px-6 text-center bg-gradient-to-b from-white via-slate-50/50 to-white dark:from-slate-950 dark:via-slate-900/30 dark:to-slate-950">
+
+      <section className="relative pt-40 pb-24 px-6 text-center bg-gradient-to-b from-white via-slate-50/50 to-white dark:from-slate-950 dark:via-slate-900/30 dark:to-slate-950">
         <div className="relative z-10">
           <h2 className="text-orange-500 font-black text-sm uppercase tracking-[0.4em] mb-4">
             Get In Touch
@@ -92,10 +93,11 @@ const Contact = () => {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-20">
-        <div className="grid lg:grid-cols-12 gap-16 items-start">
-          {/* LEFT: CONTACT INFO */}
-          <div className="lg:col-span-5 space-y-10">
+      {/* Expanded max-width and adjusted column ratios for ultra-wide screens */}
+      <section className="max-w-[1600px] mx-auto px-4 md:px-12 xl:px-24 pb-20">
+        <div className="grid lg:grid-cols-12 gap-16 xl:gap-24 items-start">
+          {/* LEFT: CONTACT INFO - Slightly narrowed on XL to keep form prominent */}
+          <div className="lg:col-span-5 xl:col-span-4 space-y-10">
             <div className="bg-white dark:bg-slate-900 p-10 md:p-14 rounded-[50px] border border-slate-100 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-none">
               <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-10 tracking-tight">
                 Corporate HQ
@@ -146,7 +148,7 @@ const Contact = () => {
           </div>
 
           {/* RIGHT: CONTACT FORM / SUCCESS MESSAGE */}
-          <div className="lg:col-span-7 h-full">
+          <div className="lg:col-span-7 xl:col-span-8 h-full">
             <div className="bg-white dark:bg-slate-900 shadow-[0_40px_100px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-100 dark:border-slate-800 rounded-[50px] p-10 md:p-16 min-h-[600px] flex flex-col justify-center">
               {!isSubmitted ? (
                 <>
@@ -154,7 +156,7 @@ const Contact = () => {
                     Send a Message
                   </h3>
                   <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="grid md:grid-cols-2 gap-8">
+                    <div className="grid md:grid-cols-2 gap-8 xl:gap-12">
                       <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-2">
                           Full Name
@@ -270,7 +272,7 @@ const Contact = () => {
       </section>
 
       {/* MAP SECTION - USING RELIABLE PLACE SEARCH URL */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-32">
+      <section className="max-w-[1600px] mx-auto px-4 md:px-12 xl:px-24 pb-32">
         <div className="overflow-hidden rounded-[50px] border border-slate-100 dark:border-slate-800 shadow-2xl relative">
           <iframe
             title="Addis Eats HQ"

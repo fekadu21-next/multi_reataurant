@@ -50,10 +50,11 @@ const Services = () => {
   return (
     <div className="bg-white dark:bg-slate-950 min-h-screen">
       {/* --- HERO SECTION --- */}
-      <section className="relative py-20 px-6 overflow-hidden">
+      {/* Increased vertical padding and wider blur distribution for high-res desktops */}
+      <section className="relative py-32 xl:py-48 px-6 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full z-0 opacity-10">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-orange-500 rounded-full blur-[120px]" />
-          <div className="absolute bottom-10 right-10 w-72 h-72 bg-blue-500 rounded-full blur-[120px]" />
+          <div className="absolute top-10 left-[10%] w-96 h-96 bg-orange-500 rounded-full blur-[150px]" />
+          <div className="absolute bottom-10 right-[10%] w-96 h-96 bg-blue-500 rounded-full blur-[150px]" />
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
@@ -71,8 +72,9 @@ const Services = () => {
       </section>
 
       {/* --- CORE SERVICES GRID --- */}
-      <section className="py-10 px-6">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8">
+      {/* Added max-width 1600px and increased gap for better wide-screen balance */}
+      <section className="py-16 px-6 xl:px-24">
+        <div className="max-w-[1600px] mx-auto grid md:grid-cols-2 gap-10 xl:gap-20">
           {coreServices.map((service, index) => (
             <div
               key={index}
@@ -97,8 +99,8 @@ const Services = () => {
       </section>
 
       {/* --- THE ADDED VALUE (ICON ROW) --- */}
-      <section className="py-24 bg-slate-900 dark:bg-slate-900/80 my-20">
-        <div className="max-w-7xl mx-auto px-6">
+      <section className="py-32 bg-slate-900 dark:bg-slate-900/80 my-24 xl:my-32">
+        <div className="max-w-[1600px] mx-auto px-6 xl:px-24">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
             {features.map((feature, i) => (
               <div key={i} className="text-center space-y-4">
@@ -114,8 +116,9 @@ const Services = () => {
       </section>
 
       {/* --- SERVICE FOR VENDORS SECTION --- */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+      {/* Optimized for 1600px screens with a wider gap between image and text */}
+      <section className="py-32 px-6 xl:px-24">
+        <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-16 xl:gap-32">
           <div className="lg:w-1/2 order-2 lg:order-1">
             <img
               src="https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&q=80&w=2070"
@@ -149,7 +152,8 @@ const Services = () => {
 
       {/* --- BOTTOM CTA --- */}
       <section className="py-32 px-6 text-center">
-        <div className="max-w-3xl mx-auto bg-slate-50 dark:bg-slate-900 p-12 md:p-20 rounded-[60px] border border-slate-100 dark:border-slate-800 relative overflow-hidden">
+        {/* Increased max-width and padding to match the scale of a wide desktop display */}
+        <div className="max-w-5xl mx-auto bg-slate-50 dark:bg-slate-900 p-12 md:p-24 xl:p-32 rounded-[80px] border border-slate-100 dark:border-slate-800 relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl" />
 
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-6 relative z-10">
