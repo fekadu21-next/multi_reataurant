@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { FaGlobe, FaMoon, FaSun, FaBell } from "react-icons/fa";
 import ProfileDropdown from "../components/ProfileDropdown";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import axios from "axios";
 
 const Navbar = () => {
@@ -385,19 +386,18 @@ const Navbar = () => {
         </div>
 
         {/* --- MOBILE NAVIGATION --- */}
-       <div className="lg:hidden mt-4 pt-4 border-t border-gray-50 dark:border-slate-800 overflow-x-auto no-scrollbar flex items-center gap-6 pb-2">
-  {navLinks.map((link) => (
-    <Link
-      key={link.path}
-      to={link.path}
-      className={`text-xs font-bold whitespace-nowrap transition-colors ${
-        location.pathname === link.path ? "text-orange-500" : "text-slate-500 dark:text-slate-400"
-      }`}
-    >
-      {link.name}
-    </Link>
-  ))}
-</div>
+        <div className="lg:hidden mt-4 pt-4 border-t border-gray-50 dark:border-slate-800 overflow-x-auto no-scrollbar flex items-center gap-6 pb-2">
+          {navLinks.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`text-xs font-bold whitespace-nowrap transition-colors ${location.pathname === link.path ? "text-orange-500" : "text-slate-500 dark:text-slate-400"
+                }`}
+            >
+              {link.name}
+            </Link>
+          ))}
+        </div>
       </div>
     </nav >
   );
