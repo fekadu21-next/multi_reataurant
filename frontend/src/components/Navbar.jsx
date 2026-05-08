@@ -150,24 +150,31 @@ const Navbar = () => {
           </div>
 
           {/* --- CENTER LINKS (Desktop) --- */}
-          <div className="hidden xl:flex items-center justify-center flex-1 gap-12">
+          <div className="hidden lg:flex items-center justify-center flex-1 gap-6 xl:gap-12 px-4">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-[15px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === link.path
+                className={`text-[14px] xl:text-[15px] font-semibold transition-all duration-200 whitespace-nowrap relative group ${location.pathname === link.path
                   ? "text-orange-500"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:text-orange-500 dark:hover:text-white"
                   }`}
                 style={{ fontFamily: "'Inter', sans-serif" }}
               >
                 {link.name}
+                {/* Optional: Add a small underline indicator for active link */}
+                {location.pathname === link.path && (
+                  <motion.div
+                    layoutId="navUnderline"
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-orange-500 rounded-full"
+                  />
+                )}
               </Link>
             ))}
           </div>
 
           {/* --- RIGHT ACTIONS --- */}
-          <div className="flex items-center gap-5 shrink-0">
+          <div className="flex items-center gap-3 xl:gap-5 shrink-0 ml-auto lg:ml-0">
 
             {/* Language Selection */}
             <div className="relative">
@@ -378,18 +385,19 @@ const Navbar = () => {
         </div>
 
         {/* --- MOBILE NAVIGATION --- */}
-        <div className="lg:hidden mt-4 pt-4 border-t border-gray-50 dark:border-slate-800 overflow-x-auto no-scrollbar flex items-center gap-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`text-xs font-bold whitespace-nowrap transition-colors ${location.pathname === link.path ? "text-orange-500" : "text-slate-500 dark:text-slate-400"
-                }`}
-            >
-              {link.name}
-            </Link>
-          ))}
-        </div>
+       <div className="lg:hidden mt-4 pt-4 border-t border-gray-50 dark:border-slate-800 overflow-x-auto no-scrollbar flex items-center gap-6 pb-2">
+  {navLinks.map((link) => (
+    <Link
+      key={link.path}
+      to={link.path}
+      className={`text-xs font-bold whitespace-nowrap transition-colors ${
+        location.pathname === link.path ? "text-orange-500" : "text-slate-500 dark:text-slate-400"
+      }`}
+    >
+      {link.name}
+    </Link>
+  ))}
+</div>
       </div>
     </nav >
   );

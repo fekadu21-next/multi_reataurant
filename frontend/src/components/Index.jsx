@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   FiChevronDown, FiChevronUp, FiStar, FiMapPin, FiArrowRight,
   FiTruck, FiShield, FiClock, FiHeart, FiShoppingBag, FiPlus
@@ -10,24 +9,6 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 const API_URL = "https://multi-reataurant-1.onrender.com";
-
-const HERO_COLORS = ["text-orange-500", "text-cyan-400", "text-green-400", "text-yellow-400", "text-purple-400", "text-pink-400"];
-
-const AnimatedWordText = ({ text, className }) => (
-  <div className={`flex flex-wrap justify-center gap-x-3 ${className}`}>
-    {text.split(" ").map((word, i) => (
-      <motion.span
-        key={i}
-        initial={{ opacity: 0, x: 30, filter: "blur(10px)" }}
-        animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-        transition={{ delay: i * 0.08, duration: 0.5 }}
-        className={HERO_COLORS[i % HERO_COLORS.length]}
-      >
-        {word}
-      </motion.span>
-    ))}
-  </div>
-);
 
 export default function Index() {
   const navigate = useNavigate();
@@ -229,79 +210,30 @@ export default function Index() {
       <section className="space-y-12 md:space-y-24 -mt-20 md:-mt-32">
 
         {/* ======== 1. IMMERSIVE HERO SECTION ======== */}
-        {/* ======== 1. IMMERSIVE HERO SECTION (UPDATED) ======== */}
-        <div className="relative h-[85vh] min-h-[600px] overflow-hidden bg-slate-950">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={heroIndex}
-              initial={{ x: "100%", opacity: 0 }}
-              animate={{ x: "0%", opacity: 1 }}
-              exit={{ x: "-100%", opacity: 0 }}
-              transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
-              className="absolute inset-0"
+        <div className="relative h-[80vh] min-h-[550px] overflow-hidden">
+          {heroImages.map((img, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-all duration-[1500ms] ease-in-out ${index === heroIndex ? "opacity-100 scale-100 z-0" : "opacity-0 scale-110"
+                }`}
             >
-              <img
-                src={heroImages[heroIndex].image}
-                alt="Hero"
-                className="w-full h-full object-cover scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-slate-950" />
-            </motion.div>
-          </AnimatePresence>
+              <img src={img.image} alt="Hero" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent" />
+            </div>
+          ))}
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-6 text-center">
-            <motion.div
-              key={`content-${heroIndex}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="max-w-5xl"
-            >
-              <motion.p
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="text-white font-black tracking-[0.4em] uppercase text-[10px] md:text-xs mb-8"
-              >
+          <div className="absolute inset-0 flex flex-col items-center justify-center max-w-[1440px] mx-auto px-6 text-center">
+            <div className="overflow-hidden mb-4">
+              <p className="text-orange-500 font-black tracking-[0.2em] md:tracking-[0.3em] uppercase text-[10px] md:text-xs">
                 {t("premiumDelivery")}
-              </motion.p>
-
-              {/* Modern Multi-color Title */}
-              <AnimatedWordText
-                text={heroTexts[heroIndex].title}
-                className="text-5xl md:text-8xl font-black leading-[1.1] tracking-tighter mb-8 uppercase"
-              />
-
-              {/* Modern Multi-color Subtitle */}
-              <AnimatedWordText
-                text={heroTexts[heroIndex].subtitle}
-                className="text-lg md:text-2xl font-bold max-w-2xl mx-auto opacity-90"
-              />
-
-              <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="mt-12 flex gap-4 justify-center"
-              >
-                <button className="group relative bg-orange-600 px-10 py-4 rounded-full font-black uppercase tracking-widest text-white overflow-hidden transition-all hover:scale-105 active:scale-95">
-                  <span className="relative z-10">Order Now</span>
-                  <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300" />
-                </button>
-              </motion.div>
-            </motion.div>
-          </div>
-
-          {/* Progress Indicators */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-            {heroImages.map((_, i) => (
-              <motion.div
-                key={i}
-                animate={{
-                  width: i === heroIndex ? 48 : 12,
-                  backgroundColor: i === heroIndex ? "#F97316" : "rgba(255,255,255,0.3)"
-                }}
-                className="h-1.5 rounded-full"
-              />
-            ))}
+              </p>
+            </div>
+            <h1 className="text-4xl md:text-7xl lg:text-8xl font-black text-white leading-[1.1] tracking-tighter mb-6 transition-all">
+              {heroTexts[heroIndex].title}
+            </h1>
+            <p className="text-base md:text-lg text-gray-300 max-w-lg font-medium leading-relaxed">
+              {heroTexts[heroIndex].subtitle}
+            </p>
           </div>
         </div>
 
