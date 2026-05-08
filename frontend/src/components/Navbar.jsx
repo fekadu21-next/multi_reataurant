@@ -127,7 +127,7 @@ const Navbar = () => {
         : "bg-white dark:bg-slate-950 py-5"
         }`}
     >
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+      <div className="max-w-[1600px] mx-auto px-8 md:px-16">
         <div className="flex items-center justify-between">
 
           {/* --- LOGO --- */}
@@ -150,15 +150,16 @@ const Navbar = () => {
           </div>
 
           {/* --- CENTER LINKS (Desktop) --- */}
-          <div className="hidden lg:flex items-center gap-10">
+          <div className="hidden xl:flex items-center justify-center flex-1 gap-12">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-bold tracking-tight transition-all duration-300 ${location.pathname === link.path
+                className={`text-[15px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === link.path
                   ? "text-orange-500"
-                  : "text-slate-600 dark:text-slate-300 hover:text-orange-500"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
+                style={{ fontFamily: "'Inter', sans-serif" }}
               >
                 {link.name}
               </Link>
@@ -166,7 +167,7 @@ const Navbar = () => {
           </div>
 
           {/* --- RIGHT ACTIONS --- */}
-          <div className="flex items-center gap-3 md:gap-2">
+          <div className="flex items-center gap-5 shrink-0">
 
             {/* Language Selection */}
             <div className="relative">
@@ -229,7 +230,7 @@ const Navbar = () => {
                 </button>
                 <button
                   onClick={() => navigate("/register")}
-                  className="px-6 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 dark:shadow-none active:scale-95"
+                  className="px-7 py-2.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold hover:bg-orange-500 hover:text-white transition-all active:scale-95"
                 >
                   {t("register")}
                 </button>
@@ -288,10 +289,8 @@ const Navbar = () => {
                     onClick={() => setOpenDropdown(!openDropdown)}
                   >
                     <div className="hidden sm:block text-right">
-                      <p className="text-[9px] uppercase tracking-widest text-orange-500 font-black leading-none mb-1">{t("account")}</p>
-                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-500 transition-colors">
-                        {firstName}
-                      </p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-none">{firstName}</p>
+                      <p className="text-[10px] text-slate-400 uppercase mt-1 tracking-wider">{t("account")}</p>
                     </div>
                     <div className="w-10 h-10 relative">
                       {user?.profileImage ? (
@@ -392,7 +391,7 @@ const Navbar = () => {
           ))}
         </div>
       </div>
-    </nav>
+    </nav >
   );
 };
 
