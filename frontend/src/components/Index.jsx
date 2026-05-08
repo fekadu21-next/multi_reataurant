@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiChevronDown, FiChevronUp, FiStar, FiMapPin, FiArrowRight,
   FiTruck, FiShield, FiClock, FiHeart, FiShoppingBag, FiPlus
