@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { 
-  FiArrowRight, FiArrowLeft, FiMapPin, FiLock, 
+import {
+  FiArrowRight, FiArrowLeft, FiMapPin, FiLock,
   FiCheckCircle, FiUpload, FiPhone, FiMail, FiInfo,
   FiShoppingBag, FiMenu, FiBarChart2, FiUsers
 } from "react-icons/fi";
@@ -86,12 +86,12 @@ export default function RegisterRes({ onClose }) {
       };
 
       const response = await axios.post(`${API_URL}/api/restaurants/register`, payload);
-      
+
       if (response.status === 201 || response.status === 200) {
         setSuccess(true);
         setTimeout(() => {
-          if (onClose) onClose(); 
-          window.location.href = "/login"; // Force real native page mount alignment safely
+          if (onClose) onClose();
+          window.location.href = "/login";
         }, 2000);
       }
     } catch (err) {
@@ -104,7 +104,7 @@ export default function RegisterRes({ onClose }) {
 
   return (
     <div className="w-full bg-white dark:bg-slate-900 rounded-[40px] shadow-[0_32px_80px_-20px_rgba(0,0,0,0.08)] dark:shadow-[0_32px_80px_-20px_rgba(0,0,0,0.5)] border border-gray-100 dark:border-slate-800 overflow-hidden relative z-10 flex flex-col md:flex-row min-h-[580px]">
-      
+
       {/* Left Aspect Banner */}
       <div className="w-full md:w-[40%] bg-slate-950 p-8 md:p-10 text-white flex flex-col justify-between relative bg-gradient-to-br from-slate-900 to-black border-r border-slate-800">
         <div className="space-y-6">
@@ -128,13 +128,12 @@ export default function RegisterRes({ onClose }) {
             { num: 3, title: "Security Protocols", desc: "Manager access keys" }
           ].map((s) => (
             <div key={s.num} className="flex items-center gap-4">
-              <div className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center transition-all ${
-                step === s.num 
-                  ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30" 
-                  : step > s.num 
-                  ? "bg-emerald-500 text-white" 
-                  : "bg-slate-800 text-slate-400 border border-slate-700"
-              }`}>
+              <div className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center transition-all ${step === s.num
+                  ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30"
+                  : step > s.num
+                    ? "bg-emerald-500 text-white"
+                    : "bg-slate-800 text-slate-400 border border-slate-700"
+                }`}>
                 {step > s.num ? "✓" : s.num}
               </div>
               <div>
@@ -152,7 +151,7 @@ export default function RegisterRes({ onClose }) {
 
       {/* Right Aspect Form Workspace */}
       <div className="w-full md:w-[60%] p-8 md:p-10 flex flex-col justify-center bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-        
+
         {success ? (
           <div className="text-center space-y-4 py-8 animate-in fade-in duration-500">
             <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -172,7 +171,7 @@ export default function RegisterRes({ onClose }) {
               </div>
             )}
 
-            {/* STEP 1: Basic Business Configuration */}
+            {/* STEP 1 */}
             {step === 1 && (
               <div className="space-y-3.5 animate-in fade-in duration-300">
                 <div className="space-y-0.5 mb-4">
@@ -186,7 +185,7 @@ export default function RegisterRes({ onClose }) {
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Restaurant Name *</label>
                   <div className="relative">
                     <FiShoppingBag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
+                    <input
                       type="text" name="name" required value={formData.name} onChange={handleChange} placeholder="e.g. Bait Al Mandi Addis"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
@@ -198,7 +197,7 @@ export default function RegisterRes({ onClose }) {
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Official Email Address *</label>
                     <div className="relative">
                       <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input 
+                      <input
                         type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="contact@kitchen.com"
                         className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                       />
@@ -208,7 +207,7 @@ export default function RegisterRes({ onClose }) {
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Dispatch Hotline Mobile *</label>
                     <div className="relative">
                       <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input 
+                      <input
                         type="tel" name="phone" required value={formData.phone} onChange={handleChange} placeholder="+251 9..."
                         className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                       />
@@ -218,7 +217,7 @@ export default function RegisterRes({ onClose }) {
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Primary Cuisine Type *</label>
-                  <select 
+                  <select
                     name="cuisineType" required value={formData.cuisineType} onChange={handleChange}
                     className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 px-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer text-slate-700 dark:text-slate-300"
                   >
@@ -232,7 +231,7 @@ export default function RegisterRes({ onClose }) {
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Storefront Summary (Optional)</label>
-                  <textarea 
+                  <textarea
                     name="description" value={formData.description} onChange={handleChange} rows="2" placeholder="Describe your kitchen highlights..."
                     className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-2.5 px-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors resize-none"
                   />
@@ -240,7 +239,7 @@ export default function RegisterRes({ onClose }) {
               </div>
             )}
 
-            {/* STEP 2: Kitchen Location Geographic Logistics */}
+            {/* STEP 2 */}
             {step === 2 && (
               <div className="space-y-3.5 animate-in fade-in duration-300">
                 <div className="space-y-0.5 mb-4">
@@ -253,14 +252,14 @@ export default function RegisterRes({ onClose }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Base Hub</label>
-                    <input 
+                    <input
                       type="text" name="city" readOnly value={formData.city}
                       className="w-full bg-gray-100 dark:bg-slate-800/20 text-gray-400 border border-gray-100 dark:border-slate-800 rounded-xl py-3 px-4 text-xs font-bold cursor-not-allowed outline-none"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Sub-City District *</label>
-                    <input 
+                    <input
                       type="text" name="subCity" required value={formData.subCity} onChange={handleChange} placeholder="e.g. Bole / Kirkos"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 px-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
@@ -271,7 +270,7 @@ export default function RegisterRes({ onClose }) {
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Street Line / Landmarks *</label>
                   <div className="relative">
                     <FiMapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
+                    <input
                       type="text" name="street" required value={formData.street} onChange={handleChange} placeholder="e.g. Cameroon Rd, Next to Edna Mall"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
@@ -288,7 +287,7 @@ export default function RegisterRes({ onClose }) {
               </div>
             )}
 
-            {/* STEP 3: Access credentials protocol stack */}
+            {/* STEP 3 */}
             {step === 3 && (
               <form onSubmit={handleSubmit} className="space-y-3.5 animate-in fade-in duration-300">
                 <div className="space-y-0.5 mb-4">
@@ -301,7 +300,7 @@ export default function RegisterRes({ onClose }) {
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Security Password *</label>
                   <div className="relative">
                     <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
+                    <input
                       type="password" name="password" required value={formData.password} onChange={handleChange} placeholder="••••••••"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
@@ -311,7 +310,7 @@ export default function RegisterRes({ onClose }) {
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Verify Password *</label>
                   <div className="relative">
                     <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
+                    <input
                       type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} placeholder="••••••••"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
@@ -320,7 +319,7 @@ export default function RegisterRes({ onClose }) {
                 <div className="flex items-start gap-2.5 pt-1">
                   <input type="checkbox" required id="terms" className="mt-1 accent-orange-500 w-3.5 h-3.5 cursor-pointer" />
                   <label htmlFor="terms" className="text-[11px] text-gray-400 dark:text-gray-500 font-medium leading-normal cursor-pointer select-none">
-                    I endorse platform metrics and verify that all location data submitted conforms to standards.
+                    I endorse platform metrics and verify that all data submitted conforms to standards.
                   </label>
                 </div>
 
@@ -341,7 +340,7 @@ export default function RegisterRes({ onClose }) {
               </form>
             )}
 
-            {/* Step navigation architecture tracking footer details */}
+            {/* Stepper Controls Footer */}
             {step < 3 && (
               <div className="flex items-center justify-between pt-5 border-t border-gray-100 dark:border-slate-800/60">
                 {step > 1 ? (

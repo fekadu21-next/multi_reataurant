@@ -148,8 +148,7 @@ export default function Index() {
           <button
             type="button"
             onClick={() => setShowRestaurants(!showRestaurants)}
-            className={`flex items-center gap-4 px-6 py-4 rounded-[24px] shadow-2xl transition-all duration-300 active:scale-95 
-            ${showRestaurants
+            className={`flex items-center gap-4 px-6 py-4 rounded-[24px] shadow-2xl transition-all duration-300 active:scale-95 ${showRestaurants
                 ? 'bg-slate-900 text-white dark:bg-orange-600'
                 : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-orange-50 dark:hover:bg-slate-700'
               }`}
@@ -466,7 +465,7 @@ export default function Index() {
         </div>
 
         {/* ======== 6. TRUST SECTION ======== */}
-        <div className="max-w-[1440px] mx-auto px-6 md:px-8 pb-32">
+        <div className="max-[1440px] mx-auto px-6 md:px-8 pb-32">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: <FiTruck />, title: t("fastDelivery"), desc: "Average delivery time of 25 minutes across Addis." },
