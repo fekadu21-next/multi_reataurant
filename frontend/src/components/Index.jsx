@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   FiChevronDown, FiChevronUp, FiStar, FiArrowRight,
-  FiTruck, FiShield, FiClock, FiShoppingBag, FiPlus,
-  FiSearch, FiCheckCircle, FiCompass
+  FiTruck, FiShield, FiClock, FiShoppingBag, FiPlus, 
+  FiSearch, FiCheckCircle, FiCompass, FiMenu, FiBarChart2, FiUsers
 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -38,7 +38,7 @@ export default function Index() {
         ]);
         const dataRest = await resRest.json();
         const dataMenu = await resMenu.json();
-
+        
         setRestaurants(Array.isArray(dataRest) ? dataRest : []);
         setMenuItems(Array.isArray(dataMenu) ? dataMenu : []);
 
@@ -136,7 +136,7 @@ export default function Index() {
 
       {/* HEADER CONTROLS UTILITY LINE */}
       <div className="relative z-[100] max-w-[1440px] mx-auto px-6 md:px-16 pt-8 md:pt-12 flex flex-row items-center justify-end">
-
+        
         {/* ACTIVE RESTAURANT SELECTOR HUB */}
         <div className="relative inline-block">
           <button
@@ -234,7 +234,7 @@ export default function Index() {
           </div>
         </div>
 
-        {/* ======== NEW: 3-STEP "HOW IT WORKS" UI COMPONENT ======== */}
+        {/* ======== 2. 3-STEP "HOW IT WORKS" UI COMPONENT ======== */}
         <div className="max-w-full mx-auto px-6 md:px-12">
           <div className="text-center max-w-xl mx-auto mb-14 space-y-2">
             <div className="h-1 w-12 bg-orange-500 rounded-full mx-auto" />
@@ -285,47 +285,78 @@ export default function Index() {
           </div>
         </div>
 
-        {/* ======== RE-ENGINEERED: HIGH-CONVERTING RESTAURANT PARTNERSHIP LANDING BANNER ======== */}
+        {/* ======== 3. HIGH-CONVERTING PARTNERSHIP LANDING BANNER WITH INLINE BENEFITS ======== */}
         <div className="max-w-full mx-auto px-6 md:px-12">
           <div className="relative rounded-[40px] overflow-hidden bg-slate-900 text-white p-8 md:p-14 border border-slate-800 shadow-2xl group">
-
+            
             {/* Ambient Background Accent Glows */}
             <div className="absolute top-0 right-0 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none transition-all duration-500 group-hover:bg-orange-500/20" />
             <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-orange-600/5 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
-              <div className="space-y-4 max-w-3xl">
+            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-12">
+              
+              {/* Left Column: Context & Feature Benefits Grid */}
+              <div className="space-y-6 max-w-3xl">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-[10px] font-black uppercase tracking-wider">
                   🚀 Self-Service Portal Active
                 </div>
                 <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none uppercase">
-                  List Your Kitchen. <br className="hidden sm:block" /> Become a Partner Today!
+                  List Your Kitchen. <br className="hidden sm:block"/> Become a Partner Today!
                 </h2>
-                <p className="text-sm md:text-base text-gray-400 font-medium leading-relaxed max-w-2xl">
+                <p className="text-sm md:text-base text-gray-400 font-medium leading-relaxed">
                   Take full charge of your enterprise growth. Bypass traditional waitlists—our open architecture allows restaurant store managers to instantly register, configure dynamic menus, and start dispatching orders to customers in minutes.
                 </p>
+
+                {/* UPDATED: Inline Partner Benefits Showcase Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-800 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
+                      <FiMenu size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider">Menu Controls</h4>
+                      <p className="text-[11px] text-gray-500">Update items & prices live</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-800 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
+                      <FiBarChart2 size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider">Diagnostics</h4>
+                      <p className="text-[11px] text-gray-500">Deep digital sales metrics</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-800 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
+                      <FiUsers size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider">Fleet Access</h4>
+                      <p className="text-[11px] text-gray-500">Instant courier matching</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto shrink-0">
-                <button
-                  onClick={() => navigate("/restaurant-register")}
-                  className="w-full sm:w-auto px-8 py-4.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-3 group"
+              {/* Right Column: Direct Navigation Targets */}
+              <div className="w-full lg:w-auto shrink-0">
+                <button 
+                  onClick={() => navigate("/restaurant-register")} 
+                  className="w-full lg:w-56 px-8 py-5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-3 group"
                 >
-                  <span>Register Store Now</span>
+                  <span>Register Restaurant Now</span>
                   <FiArrowRight className="group-hover:translate-x-1 transition-transform" size={14} />
                 </button>
-                <button
-                  onClick={() => navigate("/contact")}
-                  className="w-full sm:w-auto px-8 py-4.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-xs uppercase tracking-wider rounded-2xl border border-slate-700 transition-all text-center"
-                >
-                  Partner Benefits
-                </button>
               </div>
+
             </div>
           </div>
         </div>
 
-        {/* ======== 2. PERSONALIZED RECOMMENDATIONS ======== */}
+        {/* ======== 4. PERSONALIZED RECOMMENDATIONS ======== */}
         <div className="max-w-full mx-auto px-6 md:px-12">
           <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 md:mb-16 gap-4">
             <div className="space-y-3">
@@ -381,7 +412,7 @@ export default function Index() {
           )}
         </div>
 
-        {/* ======== 3. BROWSE BY CUISINE ======== */}
+        {/* ======== 5. BROWSE BY CUISINE ======== */}
         <div className="bg-slate-900 dark:bg-black py-20 md:py-32 transition-colors duration-500">
           <div className="max-w-full mx-auto px-6 md:px-12">
             <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-16 uppercase">
@@ -422,7 +453,7 @@ export default function Index() {
           </div>
         </div>
 
-        {/* ======== 4. TRUST SECTION ======== */}
+        {/* ======== 6. TRUST SECTION ======== */}
         <div className="max-w-[1440px] mx-auto px-6 md:px-8 pb-32">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
