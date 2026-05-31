@@ -340,7 +340,7 @@ export default function Index() {
                       <FiUsers size={18} />
                     </div>
                     <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider">Fleet <Accessss></Accessss></h4>
+                      <h4 className="text-xs font-black uppercase tracking-wider">Fleet Accessss</h4>
                       <p className="text-[11px] text-gray-500">Instant courier matching</p>
                     </div>
                   </div>
