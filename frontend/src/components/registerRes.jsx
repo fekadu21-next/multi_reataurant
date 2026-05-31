@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { 
-  FiArrowRight, FiArrowLeft, FiMapPin, FiLock, 
+import {
+  FiArrowRight, FiArrowLeft, FiMapPin, FiLock,
   FiCheckCircle, FiUpload, FiPhone, FiMail, FiInfo,
   FiShoppingBag, FiMenu, FiBarChart2, FiUsers
 } from "react-icons/fi";
@@ -36,7 +36,7 @@ export default function RegisterRes({ onClose }) {
   };
 
   const handleNextStep = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (step === 1) {
       if (!formData.name || !formData.email || !formData.phone || !formData.cuisineType) {
         setError("Please complete all required business metrics.");
@@ -52,13 +52,14 @@ export default function RegisterRes({ onClose }) {
     setStep((prev) => prev + 1);
   };
 
-  const handlePrevStep = () => {
+  const handlePrevStep = (e) => {
+    if (e) e.preventDefault();
     setError("");
     setStep((prev) => prev - 1);
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError("Credentials mismatch. Please verify passwords match.");
       return;
@@ -87,13 +88,13 @@ export default function RegisterRes({ onClose }) {
       };
 
       const response = await axios.post(`${API_URL}/api/restaurants/register`, payload);
-      
+
       if (response.status === 201 || response.status === 200) {
         setSuccess(true);
         setTimeout(() => {
           if (onClose) onClose();
-          navigate("/login"); 
-        }, 3000);
+          navigate("/login");
+        }, 2500);
       }
     } catch (err) {
       console.error("Merchant onboarding error:", err);
@@ -105,7 +106,7 @@ export default function RegisterRes({ onClose }) {
 
   return (
     <div className="w-full bg-white dark:bg-slate-900 rounded-[40px] shadow-[0_32px_80px_-20px_rgba(0,0,0,0.08)] dark:shadow-[0_32px_80px_-20px_rgba(0,0,0,0.5)] border border-gray-100 dark:border-slate-800 overflow-hidden relative z-10 flex flex-col md:flex-row min-h-[580px]">
-      
+
       {/* Left Aspect Banner */}
       <div className="w-full md:w-[40%] bg-slate-950 p-8 md:p-10 text-white flex flex-col justify-between relative bg-gradient-to-br from-slate-900 to-black border-r border-slate-800">
         <div className="space-y-6">
@@ -129,13 +130,12 @@ export default function RegisterRes({ onClose }) {
             { num: 3, title: "Security Protocols", desc: "Manager access keys" }
           ].map((s) => (
             <div key={s.num} className="flex items-center gap-4">
-              <div className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center transition-all ${
-                step === s.num 
-                  ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30" 
-                  : step > s.num 
-                  ? "bg-emerald-500 text-white" 
-                  : "bg-slate-800 text-slate-400 border border-slate-700"
-              }`}>
+              <div className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center transition-all ${step === s.num
+                  ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30"
+                  : step > s.num
+                    ? "bg-emerald-500 text-white"
+                    : "bg-slate-800 text-slate-400 border border-slate-700"
+                }`}>
                 {step > s.num ? "✓" : s.num}
               </div>
               <div>
@@ -153,7 +153,7 @@ export default function RegisterRes({ onClose }) {
 
       {/* Right Aspect Form Workspace */}
       <div className="w-full md:w-[60%] p-8 md:p-10 flex flex-col justify-center bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-        
+
         {success ? (
           <div className="text-center space-y-4 py-8 animate-in fade-in duration-500">
             <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -161,12 +161,11 @@ export default function RegisterRes({ onClose }) {
             </div>
             <h3 className="text-xl font-black uppercase tracking-tight">Registration Submitted</h3>
             <p className="text-xs text-gray-400 dark:text-gray-500 font-medium max-w-sm mx-auto leading-relaxed">
-              Your cloud storefront registry was processed successfully. Redirecting you to login portal credentials confirmation space...
+              Your cloud storefront registry was processed successfully. Redirecting you to login portal credentials...
             </p>
           </div>
         ) : (
-          <form onSubmit={step === 3 ? handleSubmit : handleNextStep} className="space-y-5">
-            
+          <div className="space-y-5">
             {error && (
               <div className="p-3.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wide rounded-xl border border-rose-100 dark:border-rose-900/30 flex items-center gap-2">
                 <FiInfo size={14} className="shrink-0" />
@@ -174,7 +173,7 @@ export default function RegisterRes({ onClose }) {
               </div>
             )}
 
-            {/* STEP 1: Basic Business Configuration */}
+            {/* STEP 1 */}
             {step === 1 && (
               <div className="space-y-3.5 animate-in fade-in duration-300">
                 <div className="space-y-0.5 mb-4">
@@ -183,44 +182,41 @@ export default function RegisterRes({ onClose }) {
                   </h3>
                   <p className="text-xs text-gray-400 dark:text-gray-500">Configure your public visibility identities.</p>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Restaurant Name *</label>
                   <div className="relative">
                     <FiShoppingBag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
+                    <input
                       type="text" name="name" required value={formData.name} onChange={handleChange} placeholder="e.g. Bait Al Mandi Addis"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Official Email Address *</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Official Email *</label>
                     <div className="relative">
                       <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input 
+                      <input
                         type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="contact@kitchen.com"
                         className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                       />
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Dispatch Hotline Mobile *</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Dispatch Hotline *</label>
                     <div className="relative">
                       <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input 
+                      <input
                         type="tel" name="phone" required value={formData.phone} onChange={handleChange} placeholder="+251 9..."
                         className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                       />
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Primary Cuisine Type *</label>
-                  <select 
+                  <select
                     name="cuisineType" required value={formData.cuisineType} onChange={handleChange}
                     className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 px-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors appearance-none cursor-pointer text-slate-700 dark:text-slate-300"
                   >
@@ -231,10 +227,9 @@ export default function RegisterRes({ onClose }) {
                     <option value="Desserts & Beverages">Desserts, Cakes & Beverages</option>
                   </select>
                 </div>
-
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Storefront Summary (Optional)</label>
-                  <textarea 
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Storefront Summary</label>
+                  <textarea
                     name="description" value={formData.description} onChange={handleChange} rows="2" placeholder="Describe your kitchen highlights..."
                     className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-2.5 px-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors resize-none"
                   />
@@ -242,7 +237,7 @@ export default function RegisterRes({ onClose }) {
               </div>
             )}
 
-            {/* STEP 2: Kitchen Location Geographic Logistics */}
+            {/* STEP 2 */}
             {step === 2 && (
               <div className="space-y-3.5 animate-in fade-in duration-300">
                 <div className="space-y-0.5 mb-4">
@@ -251,35 +246,32 @@ export default function RegisterRes({ onClose }) {
                   </h3>
                   <p className="text-xs text-gray-400 dark:text-gray-500">Pin down operational addresses for delivery dispatches.</p>
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Base Hub</label>
-                    <input 
+                    <input
                       type="text" name="city" readOnly value={formData.city}
                       className="w-full bg-gray-100 dark:bg-slate-800/20 text-gray-400 border border-gray-100 dark:border-slate-800 rounded-xl py-3 px-4 text-xs font-bold cursor-not-allowed outline-none"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Sub-City District *</label>
-                    <input 
+                    <input
                       type="text" name="subCity" required value={formData.subCity} onChange={handleChange} placeholder="e.g. Bole / Kirkos"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 px-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Street Line / Landmarks *</label>
                   <div className="relative">
                     <FiMapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
+                    <input
                       type="text" name="street" required value={formData.street} onChange={handleChange} placeholder="e.g. Cameroon Rd, Next to Edna Mall"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
                   </div>
                 </div>
-
                 <div className="pt-1">
                   <div className="border border-dashed border-gray-200 dark:border-slate-800 rounded-xl p-5 text-center text-slate-400 hover:text-orange-500 transition-colors cursor-pointer group bg-slate-50/50 dark:bg-transparent">
                     <FiUpload size={20} className="mx-auto mb-1.5 text-gray-400 group-hover:text-orange-500 transition-colors" />
@@ -290,88 +282,88 @@ export default function RegisterRes({ onClose }) {
               </div>
             )}
 
-            {/* STEP 3: Security Credentials */}
+            {/* STEP 3 */}
             {step === 3 && (
-              <div className="space-y-3.5 animate-in fade-in duration-300">
+              <form onSubmit={handleSubmit} className="space-y-3.5 animate-in fade-in duration-300">
                 <div className="space-y-0.5 mb-4">
                   <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
                     <FiLock className="text-orange-500" /> Access Credentials
                   </h3>
                   <p className="text-xs text-gray-400 dark:text-gray-500">Establish authorization credentials for your login panel.</p>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Security Password *</label>
                   <div className="relative">
                     <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
+                    <input
                       type="password" name="password" required value={formData.password} onChange={handleChange} placeholder="••••••••"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Verify Password *</label>
                   <div className="relative">
                     <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
+                    <input
                       type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} placeholder="••••••••"
                       className="w-full bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800/80 rounded-xl py-3 pl-11 pr-4 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
                   </div>
                 </div>
-
                 <div className="flex items-start gap-2.5 pt-1">
                   <input type="checkbox" required id="terms" className="mt-1 accent-orange-500 w-3.5 h-3.5 cursor-pointer" />
                   <label htmlFor="terms" className="text-[11px] text-gray-400 dark:text-gray-500 font-medium leading-normal cursor-pointer select-none">
                     I endorse platform metrics and verify that all location data submitted conforms to standards.
                   </label>
                 </div>
-              </div>
+
+                {/* Internal Form Footer specifically for submission */}
+                <div className="flex items-center justify-between pt-5 border-t border-gray-100 dark:border-slate-800/60 mt-6">
+                  <button
+                    type="button" onClick={handlePrevStep}
+                    className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all text-slate-900 dark:text-slate-100"
+                  >
+                    <FiArrowLeft /> Back
+                  </button>
+                  <button
+                    type="submit" disabled={loading}
+                    className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 dark:disabled:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all"
+                  >
+                    {loading ? "Processing..." : "Complete Onboarding"}
+                  </button>
+                </div>
+              </form>
             )}
 
-            {/* Form Step Buttons Footer Layout */}
-            <div className="flex items-center justify-between pt-5 border-t border-gray-100 dark:border-slate-800/60">
-              {step > 1 ? (
-                <button
-                  type="button" onClick={handlePrevStep}
-                  className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all"
-                >
-                  <FiArrowLeft /> Back
-                </button>
-              ) : (
-                <button
-                  type="button" onClick={onClose || (() => navigate("/"))}
-                  className="flex items-center gap-1.5 px-4 py-3 text-gray-400 hover:text-slate-900 dark:hover:text-white font-black text-xs uppercase tracking-wider transition-colors"
-                >
-                  Cancel
-                </button>
-              )}
-
-              <button
-                type="submit" disabled={loading}
-                className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 dark:disabled:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all ml-auto group"
-              >
-                {loading ? (
-                  <span>Processing...</span>
-                ) : step === 3 ? (
-                  <>
-                    <span>Complete Onboarding</span>
-                    <FiCheckCircle />
-                  </>
+            {/* Stepper Controls Footer for Step 1 and Step 2 Only */}
+            {step < 3 && (
+              <div className="flex items-center justify-between pt-5 border-t border-gray-100 dark:border-slate-800/60">
+                {step > 1 ? (
+                  <button
+                    type="button" onClick={handlePrevStep}
+                    className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all text-slate-900 dark:text-slate-100"
+                  >
+                    <FiArrowLeft /> Back
+                  </button>
                 ) : (
-                  <>
-                    <span>Next Step</span>
-                    <FiArrowRight className="group-hover:translate-x-0.5 transition-transform" />
-                  </>
+                  <button
+                    type="button" onClick={onClose || (() => navigate("/"))}
+                    className="flex items-center gap-1.5 px-4 py-3 text-gray-400 hover:text-slate-900 dark:hover:text-white font-black text-xs uppercase tracking-wider transition-colors"
+                  >
+                    Cancel
+                  </button>
                 )}
-              </button>
-            </div>
-
-          </form>
+                <button
+                  type="button" onClick={handleNextStep}
+                  className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all ml-auto"
+                >
+                  Next Step <FiArrowRight />
+                </button>
+              </div>
+            )}
+          </div>
         )}
-
       </div>
     </div>
   );

@@ -349,7 +349,6 @@ export default function Index() {
 
               {/* Right Column: Direct Navigation Targets */}
               <div className="w-full lg:w-auto shrink-0">
-                {/* CHANGED: Replaced native button logic with safe layout triggers */}
                 <button
                   type="button"
                   onClick={() => setShowRegisterModal(true)}
