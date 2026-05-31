@@ -146,6 +146,7 @@ export default function Index() {
         {/* ACTIVE RESTAURANT SELECTOR HUB */}
         <div className="relative inline-block">
           <button
+            type="button"
             onClick={() => setShowRestaurants(!showRestaurants)}
             className={`flex items-center gap-4 px-6 py-4 rounded-[24px] shadow-2xl transition-all duration-300 active:scale-95 
             ${showRestaurants
@@ -351,7 +352,10 @@ export default function Index() {
               <div className="w-full lg:w-auto shrink-0">
                 <button
                   type="button"
-                  onClick={() => setShowRegisterModal(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowRegisterModal(true);
+                  }}
                   className="w-full lg:w-56 px-8 py-5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-3 group"
                 >
                   <span>Register Restaurant Now</span>
@@ -401,6 +405,7 @@ export default function Index() {
                         </p>
                         <h3 className="text-xl md:text-2xl font-black leading-tight mb-6 uppercase tracking-tighter">{item.name}</h3>
                         <button
+                          type="button"
                           onClick={() => handleQuickAdd(item)}
                           className="bg-green-500 text-white p-4 rounded-2xl shadow-2xl hover:bg-white hover:text-green-600 transition-all active:scale-90"
                         >
@@ -489,7 +494,10 @@ export default function Index() {
             {/* Modal Layer Header Close Trigger Action */}
             <button
               type="button"
-              onClick={() => setShowRegisterModal(false)}
+              onClick={(e) => {
+                e.preventDefault();
+                setShowRegisterModal(false);
+              }}
               className="absolute top-6 right-6 md:right-auto md:left-[36%] z-[160] p-2.5 rounded-full bg-slate-900/50 hover:bg-slate-900 text-white transition-colors"
             >
               <FiX size={18} />
@@ -497,6 +505,7 @@ export default function Index() {
 
             {/* Render Standalone Imported Component */}
             <RegisterRes onClose={() => setShowRegisterModal(false)} />
+
           </div>
         </div>
       )}
