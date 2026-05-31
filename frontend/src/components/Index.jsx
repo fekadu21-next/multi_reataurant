@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  FiChevronDown, FiChevronUp, FiStar, FiMapPin, FiArrowRight,
-  FiTruck, FiShield, FiClock, FiShoppingBag, FiPlus, FiGlobe, FiBriefcase
+  FiChevronDown, FiChevronUp, FiStar, FiArrowRight,
+  FiTruck, FiShield, FiClock, FiShoppingBag, FiPlus,
+  FiSearch, FiCheckCircle, FiCompass
 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -14,7 +15,7 @@ export default function Index() {
   const navigate = useNavigate();
   const location = useLocation();
   const { addToCart } = useCart();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const token = localStorage.getItem("token");
 
   const [restaurants, setRestaurants] = useState([]);
@@ -23,39 +24,6 @@ export default function Index() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [showRestaurants, setShowRestaurants] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(true);
-
-  // Language dropdown UI state
-  const [showLangDropdown, setShowLangDropdown] = useState(false);
-  const langDropdownRef = useRef(null);
-
-  // Supported languages list mapping internal codes to explicit display text
-  const languages = [
-    { code: "en", label: "English" },
-    { code: "am", label: "አማርኛ" },
-    { code: "or", label: "Oromiffa" }
-  ];
-
-  // Derive active label based on current i18n runtime state
-  const currentLanguageLabel = useMemo(() => {
-    const match = languages.find(lang => lang.code === i18n.language);
-    return match ? match.label : "English";
-  }, [i18n.language]);
-
-  const handleLanguageChange = (langCode) => {
-    i18n.changeLanguage(langCode);
-    setShowLangDropdown(false);
-  };
-
-  // Close language selector when clicking outside component bounds
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
-        setShowLangDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   /* ---------------- SEARCH LOGIC ---------------- */
   const searchQuery = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
@@ -167,36 +135,7 @@ export default function Index() {
     <div className="w-full bg-[#FCFCFD] dark:bg-slate-950 transition-colors duration-500 overflow-x-hidden">
 
       {/* HEADER CONTROLS UTILITY LINE */}
-      <div className="relative z-[100] max-w-[1440px] mx-auto px-6 md:px-16 pt-8 md:pt-12 flex flex-row items-center justify-between lg:justify-end gap-4">
-
-        {/* NEW: Explicit Dropdown Language Selector Layout */}
-        <div className="relative" ref={langDropdownRef}>
-          <button
-            onClick={() => setShowLangDropdown(!showLangDropdown)}
-            className="flex items-center gap-2 px-4 py-3.5 rounded-[20px] shadow-md border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-black uppercase tracking-wider transition-all hover:bg-gray-50 dark:hover:bg-slate-800"
-          >
-            <FiGlobe className="text-orange-500" size={16} />
-            <span>{currentLanguageLabel}</span>
-            <FiChevronDown className={`transition-transform duration-200 ${showLangDropdown ? "rotate-180" : ""}`} />
-          </button>
-
-          {showLangDropdown && (
-            <div className="absolute left-0 lg:left-auto lg:right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-              {languages.map((lang) => (
-                <button
-                  key={lang.code}
-                  onClick={() => handleLanguageChange(lang.code)}
-                  className={`w-full text-left px-4 py-3 text-xs font-bold transition-colors ${i18n.language === lang.code
-                      ? "bg-orange-500 text-white"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-800"
-                    }`}
-                >
-                  {lang.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="relative z-[100] max-w-[1440px] mx-auto px-6 md:px-16 pt-8 md:pt-12 flex flex-row items-center justify-end">
 
         {/* ACTIVE RESTAURANT SELECTOR HUB */}
         <div className="relative inline-block">
@@ -265,10 +204,10 @@ export default function Index() {
         </div>
       </div>
 
-      <section className="space-y-12 md:space-y-20 -mt-20 md:-mt-32">
+      <section className="space-y-16 md:space-y-28 -mt-20 md:-mt-32">
 
         {/* ======== 1. IMMERSIVE HERO SECTION ======== */}
-        <div className="relative h-[80vh] min-h-[550px] overflow-hidden">
+        <div className="relative h-[85vh] min-h-[600px] overflow-hidden">
           {heroImages.map((img, index) => (
             <div
               key={index}
@@ -276,7 +215,7 @@ export default function Index() {
                 }`}
             >
               <img src={img.image} alt="Hero" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-transparent" />
             </div>
           ))}
 
@@ -286,48 +225,102 @@ export default function Index() {
                 {t("premiumDelivery")}
               </p>
             </div>
-            <h1 className="text-4xl md:text-7xl lg:text-8xl font-black text-white leading-[1.1] tracking-tighter mb-6 transition-all">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[1.1] tracking-tighter mb-6 transition-all">
               {heroTexts[heroIndex].title}
             </h1>
-            <p className="text-base md:text-lg text-gray-300 max-w-lg font-medium leading-relaxed">
+            <p className="text-base md:text-xl text-gray-300 max-w-xl font-medium leading-relaxed">
               {heroTexts[heroIndex].subtitle}
             </p>
           </div>
         </div>
 
-        {/* ======== NEW: SELF-SERVICE RESTAURANT REGISTRATION PARTNERSHIP BANNER ======== */}
-        <div className="max-w-full mx-auto px-6 md:px-12 relative z-30">
-          <div className="bg-white dark:bg-slate-900 rounded-[36px] shadow-[0_24px_70px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_24px_70px_-15px_rgba(0,0,0,0.6)] p-8 md:p-10 border border-gray-100 dark:border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-            <div className="flex gap-5 items-start">
-              <div className="p-4 rounded-2xl bg-orange-500/10 text-orange-500 dark:bg-orange-500/20 shrink-0 mt-1">
-                <FiBriefcase size={28} />
+        {/* ======== NEW: 3-STEP "HOW IT WORKS" UI COMPONENT ======== */}
+        <div className="max-w-full mx-auto px-6 md:px-12">
+          <div className="text-center max-w-xl mx-auto mb-14 space-y-2">
+            <div className="h-1 w-12 bg-orange-500 rounded-full mx-auto" />
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+              How It Works
+            </h2>
+            <p className="text-sm text-gray-400 dark:text-gray-500 font-medium">
+              Get your favorite meals delivered straight to your door in three simple steps.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* Step 1 */}
+            <div className="group bg-white dark:bg-slate-900 rounded-[32px] p-8 border border-gray-100 dark:border-slate-800/80 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.05)] text-center relative transition-all duration-300 hover:-translate-y-2">
+              <div className="absolute top-6 right-8 text-6xl font-black text-gray-100 dark:text-slate-800 select-none transition-colors group-hover:text-orange-500/10">01</div>
+              <div className="w-16 h-16 bg-orange-500/10 dark:bg-orange-500/20 text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
+                <FiSearch size={28} strokeWidth={2.5} />
               </div>
-              <div className="space-y-1">
-                <span className="text-orange-500 text-[10px] font-black tracking-widest uppercase block">
-                  Addis Merchant Network
-                </span>
-                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                  Become a Partner & Expand Your Kitchen
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 mb-3 uppercase tracking-tight">Select Restaurant</h3>
+              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium leading-relaxed px-2">
+                Choose from our handpicked collection of premium certified restaurants and top kitchens active across Addis Ababa.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="group bg-white dark:bg-slate-900 rounded-[32px] p-8 border border-gray-100 dark:border-slate-800/80 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.05)] text-center relative transition-all duration-300 hover:-translate-y-2">
+              <div className="absolute top-6 right-8 text-6xl font-black text-gray-100 dark:text-slate-800 select-none transition-colors group-hover:text-orange-500/10">02</div>
+              <div className="w-16 h-16 bg-orange-500/10 dark:bg-orange-500/20 text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
+                <FiCompass size={28} strokeWidth={2.5} />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 mb-3 uppercase tracking-tight">Browse Menu</h3>
+              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium leading-relaxed px-2">
+                Explore fully localized authentic cuisines, dynamic cloud kitchen setups, and discover everyday gourmet recommendations.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="group bg-white dark:bg-slate-900 rounded-[32px] p-8 border border-gray-100 dark:border-slate-800/80 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.05)] text-center relative transition-all duration-300 hover:-translate-y-2">
+              <div className="absolute top-6 right-8 text-6xl font-black text-gray-100 dark:text-slate-800 select-none transition-colors group-hover:text-orange-500/10">03</div>
+              <div className="w-16 h-16 bg-orange-500/10 dark:bg-orange-500/20 text-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 transform transition-transform group-hover:scale-110">
+                <FiCheckCircle size={28} strokeWidth={2.5} />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 mb-3 uppercase tracking-tight">Place Your Order</h3>
+              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium leading-relaxed px-2">
+                Checkout instantly with multi-layer secure digital payments and track your meal live straight to your doorstep.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ======== RE-ENGINEERED: HIGH-CONVERTING RESTAURANT PARTNERSHIP LANDING BANNER ======== */}
+        <div className="max-w-full mx-auto px-6 md:px-12">
+          <div className="relative rounded-[40px] overflow-hidden bg-slate-900 text-white p-8 md:p-14 border border-slate-800 shadow-2xl group">
+
+            {/* Ambient Background Accent Glows */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none transition-all duration-500 group-hover:bg-orange-500/20" />
+            <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-orange-600/5 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
+              <div className="space-y-4 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-[10px] font-black uppercase tracking-wider">
+                  🚀 Self-Service Portal Active
+                </div>
+                <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none uppercase">
+                  List Your Kitchen. <br className="hidden sm:block" /> Become a Partner Today!
                 </h2>
-                <p className="text-sm text-gray-400 dark:text-gray-500 max-w-2xl font-medium leading-relaxed">
-                  Want to feature your menu on our application? Register as a restaurant store owner directly to manage online dishes, view interactive sales diagnostics, and interface with our delivery fleet.
+                <p className="text-sm md:text-base text-gray-400 font-medium leading-relaxed max-w-2xl">
+                  Take full charge of your enterprise growth. Bypass traditional waitlists—our open architecture allows restaurant store managers to instantly register, configure dynamic menus, and start dispatching orders to customers in minutes.
                 </p>
               </div>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto shrink-0">
-              <button
-                onClick={() => navigate("/restaurant-register")}
-                className="w-full sm:w-auto px-6 py-4 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/10 dark:shadow-none transition-all flex items-center justify-center gap-2 group"
-              >
-                <span>Register Restaurant</span>
-                <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button
-                onClick={() => navigate("/contact")}
-                className="w-full sm:w-auto px-6 py-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black text-xs uppercase tracking-wider rounded-2xl transition-all border border-gray-100 dark:border-slate-700 text-center"
-              >
-                Become Partner
-              </button>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto shrink-0">
+                <button
+                  onClick={() => navigate("/restaurant-register")}
+                  className="w-full sm:w-auto px-8 py-4.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-3 group"
+                >
+                  <span>Register Store Now</span>
+                  <FiArrowRight className="group-hover:translate-x-1 transition-transform" size={14} />
+                </button>
+                <button
+                  onClick={() => navigate("/contact")}
+                  className="w-full sm:w-auto px-8 py-4.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-xs uppercase tracking-wider rounded-2xl border border-slate-700 transition-all text-center"
+                >
+                  Partner Benefits
+                </button>
+              </div>
             </div>
           </div>
         </div>
