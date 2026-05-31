@@ -349,7 +349,9 @@ export default function Index() {
 
               {/* Right Column: Direct Navigation Targets */}
               <div className="w-full lg:w-auto shrink-0">
+                {/* CHANGED: Replaced native button logic with safe layout triggers */}
                 <button
+                  type="button"
                   onClick={() => setShowRegisterModal(true)}
                   className="w-full lg:w-56 px-8 py-5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-3 group"
                 >
@@ -487,6 +489,7 @@ export default function Index() {
 
             {/* Modal Layer Header Close Trigger Action */}
             <button
+              type="button"
               onClick={() => setShowRegisterModal(false)}
               className="absolute top-6 right-6 md:right-auto md:left-[36%] z-[160] p-2.5 rounded-full bg-slate-900/50 hover:bg-slate-900 text-white transition-colors"
             >
