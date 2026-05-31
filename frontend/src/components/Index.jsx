@@ -497,7 +497,6 @@ export default function Index() {
 
             {/* Render Standalone Imported Component */}
             <RegisterRes onClose={() => setShowRegisterModal(false)} />
-
           </div>
         </div>
       )}

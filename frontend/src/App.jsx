@@ -9,6 +9,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Index from "./components/Index";
 import RestaurantMenu from "./components/RestaurantMenu";
+import RegisterRes from "./components/registerRes";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -104,6 +105,7 @@ export default function App() {
               {/* <Route path="/payment" element={<PaymentPage />} /> */}
               <Route path="/payment-success" element={<PaymentSuccess />} />
               {/* AUTH */}
+              <Route path="/estaurant-register" element={<RegisterRes />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
