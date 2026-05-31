@@ -149,8 +149,8 @@ export default function Index() {
             type="button"
             onClick={() => setShowRestaurants(!showRestaurants)}
             className={`flex items-center gap-4 px-6 py-4 rounded-[24px] shadow-2xl transition-all duration-300 active:scale-95 ${showRestaurants
-                ? 'bg-slate-900 text-white dark:bg-orange-600'
-                : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-orange-50 dark:hover:bg-slate-700'
+              ? 'bg-slate-900 text-white dark:bg-orange-600'
+              : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-orange-50 dark:hover:bg-slate-700'
               }`}
           >
             <div className={`p-2 rounded-xl ${showRestaurants ? 'bg-orange-500 text-white' : 'bg-orange-100 dark:bg-slate-700 text-orange-600'}`}>
@@ -340,7 +340,7 @@ export default function Index() {
                       <FiUsers size={18} />
                     </div>
                     <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider">Fleet Access</h4>
+                      <h4 className="text-xs font-black uppercase tracking-wider">Fleet <Accessss></Accessss></h4>
                       <p className="text-[11px] text-gray-500">Instant courier matching</p>
                     </div>
                   </div>
