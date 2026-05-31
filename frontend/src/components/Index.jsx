@@ -10,7 +10,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 // Import custom standalone partner registration layout
-import RegisterRes from "./RegisterRes";
+import RegisterRes from "./registerRes";
 
 const API_URL = "https://multi-reataurant-1.onrender.com";
 
