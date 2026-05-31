@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   FiChevronDown, FiChevronUp, FiStar, FiMapPin, FiArrowRight,
-  FiTruck, FiShield, FiClock, FiHeart, FiShoppingBag, FiPlus
+  FiTruck, FiShield, FiClock, FiShoppingBag, FiPlus, FiGlobe, FiBriefcase
 } from "react-icons/fi";
-import { useNavigate, useLocation } from "react-router-dom"; // Added useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
@@ -12,9 +12,9 @@ const API_URL = "https://multi-reataurant-1.onrender.com";
 
 export default function Index() {
   const navigate = useNavigate();
-  const location = useLocation(); // Hook to listen to URL changes
+  const location = useLocation();
   const { addToCart } = useCart();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const token = localStorage.getItem("token");
 
   const [restaurants, setRestaurants] = useState([]);
@@ -24,8 +24,40 @@ export default function Index() {
   const [showRestaurants, setShowRestaurants] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(true);
 
+  // Language dropdown UI state
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const langDropdownRef = useRef(null);
+
+  // Supported languages list mapping internal codes to explicit display text
+  const languages = [
+    { code: "en", label: "English" },
+    { code: "am", label: "አማርኛ" },
+    { code: "or", label: "Oromiffa" }
+  ];
+
+  // Derive active label based on current i18n runtime state
+  const currentLanguageLabel = useMemo(() => {
+    const match = languages.find(lang => lang.code === i18n.language);
+    return match ? match.label : "English";
+  }, [i18n.language]);
+
+  const handleLanguageChange = (langCode) => {
+    i18n.changeLanguage(langCode);
+    setShowLangDropdown(false);
+  };
+
+  // Close language selector when clicking outside component bounds
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
+        setShowLangDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   /* ---------------- SEARCH LOGIC ---------------- */
-  // Extract search term from URL: e.g., /?search=pizza
   const searchQuery = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
 
   /* ---------------- FETCH DATA ---------------- */
@@ -38,7 +70,7 @@ export default function Index() {
         ]);
         const dataRest = await resRest.json();
         const dataMenu = await resMenu.json();
-        console.log("datamenu", dataMenu)
+
         setRestaurants(Array.isArray(dataRest) ? dataRest : []);
         setMenuItems(Array.isArray(dataMenu) ? dataMenu : []);
 
@@ -62,7 +94,6 @@ export default function Index() {
   }, [token]);
 
   /* ---------------- FILTERING LOGIC ---------------- */
-  // Filter recommendations based on search query
   const filteredRecommendations = useMemo(() => {
     if (!searchQuery) return recommendations;
     return recommendations.filter(item =>
@@ -72,7 +103,6 @@ export default function Index() {
     );
   }, [recommendations, searchQuery]);
 
-  // Filter cuisine categories based on search query
   /* ---------------- CUISINE GROUPING LOGIC ---------------- */
   const filteredCuisineMenus = useMemo(() => {
     if (!menuItems.length) return [];
@@ -81,15 +111,12 @@ export default function Index() {
 
     menuItems.forEach((item) => {
       const catObj = item.categoryId;
-
-      // Only process if the category object exists
       if (catObj && catObj._id) {
-        // We use the category ID as the key to ensure uniqueness per category
         if (!categoryMap.has(catObj._id)) {
           categoryMap.set(catObj._id, {
             image: item.image,
-            itemName: item.name, // The specific menu item name
-            categoryName: catObj.label || catObj.name || catObj.key, // The category name/label
+            itemName: item.name,
+            categoryName: catObj.label || catObj.name || catObj.key,
             restaurantId: item.restaurantId?._id || item.restaurantId
           });
         }
@@ -139,8 +166,39 @@ export default function Index() {
   return (
     <div className="w-full bg-[#FCFCFD] dark:bg-slate-950 transition-colors duration-500 overflow-x-hidden">
 
-      {/* OVERLAY DROPDOWN LOGIC */}
-      <div className="relative z-[100] max-w-[1440px] mx-auto px-6 md:px-16 pt-8 md:pt-12 flex justify-center lg:justify-end">
+      {/* HEADER CONTROLS UTILITY LINE */}
+      <div className="relative z-[100] max-w-[1440px] mx-auto px-6 md:px-16 pt-8 md:pt-12 flex flex-row items-center justify-between lg:justify-end gap-4">
+
+        {/* NEW: Explicit Dropdown Language Selector Layout */}
+        <div className="relative" ref={langDropdownRef}>
+          <button
+            onClick={() => setShowLangDropdown(!showLangDropdown)}
+            className="flex items-center gap-2 px-4 py-3.5 rounded-[20px] shadow-md border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-black uppercase tracking-wider transition-all hover:bg-gray-50 dark:hover:bg-slate-800"
+          >
+            <FiGlobe className="text-orange-500" size={16} />
+            <span>{currentLanguageLabel}</span>
+            <FiChevronDown className={`transition-transform duration-200 ${showLangDropdown ? "rotate-180" : ""}`} />
+          </button>
+
+          {showLangDropdown && (
+            <div className="absolute left-0 lg:left-auto lg:right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => handleLanguageChange(lang.code)}
+                  className={`w-full text-left px-4 py-3 text-xs font-bold transition-colors ${i18n.language === lang.code
+                      ? "bg-orange-500 text-white"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-800"
+                    }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ACTIVE RESTAURANT SELECTOR HUB */}
         <div className="relative inline-block">
           <button
             onClick={() => setShowRestaurants(!showRestaurants)}
@@ -207,7 +265,7 @@ export default function Index() {
         </div>
       </div>
 
-      <section className="space-y-12 md:space-y-24 -mt-20 md:-mt-32">
+      <section className="space-y-12 md:space-y-20 -mt-20 md:-mt-32">
 
         {/* ======== 1. IMMERSIVE HERO SECTION ======== */}
         <div className="relative h-[80vh] min-h-[550px] overflow-hidden">
@@ -234,6 +292,43 @@ export default function Index() {
             <p className="text-base md:text-lg text-gray-300 max-w-lg font-medium leading-relaxed">
               {heroTexts[heroIndex].subtitle}
             </p>
+          </div>
+        </div>
+
+        {/* ======== NEW: SELF-SERVICE RESTAURANT REGISTRATION PARTNERSHIP BANNER ======== */}
+        <div className="max-w-full mx-auto px-6 md:px-12 relative z-30">
+          <div className="bg-white dark:bg-slate-900 rounded-[36px] shadow-[0_24px_70px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_24px_70px_-15px_rgba(0,0,0,0.6)] p-8 md:p-10 border border-gray-100 dark:border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+            <div className="flex gap-5 items-start">
+              <div className="p-4 rounded-2xl bg-orange-500/10 text-orange-500 dark:bg-orange-500/20 shrink-0 mt-1">
+                <FiBriefcase size={28} />
+              </div>
+              <div className="space-y-1">
+                <span className="text-orange-500 text-[10px] font-black tracking-widest uppercase block">
+                  Addis Merchant Network
+                </span>
+                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Become a Partner & Expand Your Kitchen
+                </h2>
+                <p className="text-sm text-gray-400 dark:text-gray-500 max-w-2xl font-medium leading-relaxed">
+                  Want to feature your menu on our application? Register as a restaurant store owner directly to manage online dishes, view interactive sales diagnostics, and interface with our delivery fleet.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto shrink-0">
+              <button
+                onClick={() => navigate("/restaurant-register")}
+                className="w-full sm:w-auto px-6 py-4 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/10 dark:shadow-none transition-all flex items-center justify-center gap-2 group"
+              >
+                <span>Register Restaurant</span>
+                <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button
+                onClick={() => navigate("/contact")}
+                className="w-full sm:w-auto px-6 py-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black text-xs uppercase tracking-wider rounded-2xl transition-all border border-gray-100 dark:border-slate-700 text-center"
+              >
+                Become Partner
+              </button>
+            </div>
           </div>
         </div>
 
@@ -292,9 +387,9 @@ export default function Index() {
             </div>
           )}
         </div>
+
         {/* ======== 3. BROWSE BY CUISINE ======== */}
         <div className="bg-slate-900 dark:bg-black py-20 md:py-32 transition-colors duration-500">
-          {/* Changed max-w-[1440px] to max-w-full */}
           <div className="max-w-full mx-auto px-6 md:px-12">
             <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-16 uppercase">
               {t("browseCuisine")} <span className="text-orange-500 italic">Cuisine</span>
@@ -308,7 +403,6 @@ export default function Index() {
                     className="group cursor-pointer text-center"
                     onClick={() => navigate(`/restaurant/${menu.restaurantId}`)}
                   >
-                    {/* Image Container */}
                     <div className="aspect-square rounded-[30px] md:rounded-[50px] overflow-hidden border-4 border-slate-800 transition-all duration-500 group-hover:border-orange-500 mb-6 shadow-2xl">
                       <img
                         src={menu.image?.startsWith('http') ? menu.image : `${API_URL}${menu.image}`}
@@ -317,12 +411,10 @@ export default function Index() {
                       />
                     </div>
 
-                    {/* Category Label (Primary) */}
                     <h3 className="text-lg font-black text-white uppercase group-hover:text-orange-500 transition-colors">
                       {menu.categoryName}
                     </h3>
 
-                    {/* Item Name (Secondary - Added as requested) */}
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1 group-hover:text-gray-300">
                       Featured: {menu.itemName}
                     </p>

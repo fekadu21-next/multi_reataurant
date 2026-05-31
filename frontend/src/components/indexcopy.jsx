@@ -8,7 +8,7 @@ import { useCart } from "../context/CartContext";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://multi-reataurant-1.onrender.com";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function Index() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [showRestaurants, setShowRestaurants] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(true);
-  const [categories, setCategories] = useState([]);
+
   /* ---------------- SEARCH LOGIC ---------------- */
   // Extract search term from URL: e.g., /?search=pizza
   const searchQuery = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
@@ -32,19 +32,15 @@ export default function Index() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [resRest, resMenu, resCats] = await Promise.all([
+        const [resRest, resMenu] = await Promise.all([
           fetch(`${API_URL}/api/restaurants`),
-          fetch(`${API_URL}/api/menu-items`),
-          fetch(`${API_URL}/api/categories`) // Assuming this is your endpoint
+          fetch(`${API_URL}/api/menu-items`)
         ]);
-
         const dataRest = await resRest.json();
         const dataMenu = await resMenu.json();
-        const dataCats = await resCats.json();
-
+        console.log("datamenu", dataMenu)
         setRestaurants(Array.isArray(dataRest) ? dataRest : []);
         setMenuItems(Array.isArray(dataMenu) ? dataMenu : []);
-        setCategories(Array.isArray(dataCats) ? dataCats : []);
 
         setLoadingRecs(true);
         const recPath = token
@@ -77,31 +73,31 @@ export default function Index() {
   }, [recommendations, searchQuery]);
 
   // Filter cuisine categories based on search query
-  /* ---------------- CUISINE LOGIC ---------------- */
-  // Extracts unique categories from menuItems to display in the browse section
+  /* ---------------- CUISINE GROUPING LOGIC ---------------- */
   const filteredCuisineMenus = useMemo(() => {
-    if (!menuItems.length || !categories.length) return [];
+    if (!menuItems.length) return [];
 
     const categoryMap = new Map();
 
     menuItems.forEach((item) => {
-      // Find the category object that matches the item's categoryId
-      const categoryObj = categories.find(cat => cat._id === item.categoryId);
+      const catObj = item.categoryId;
 
-      if (categoryObj && categoryObj.name) {
-        const catName = categoryObj.name; // This will be "Drinks" or "Tradational"
-
-        if (!categoryMap.has(catName)) {
-          categoryMap.set(catName, {
-            ...item,
-            displayCategoryName: catName // Save the readable name for the UI
+      // Only process if the category object exists
+      if (catObj && catObj._id) {
+        // We use the category ID as the key to ensure uniqueness per category
+        if (!categoryMap.has(catObj._id)) {
+          categoryMap.set(catObj._id, {
+            image: item.image,
+            itemName: item.name, // The specific menu item name
+            categoryName: catObj.label || catObj.name || catObj.key, // The category name/label
+            restaurantId: item.restaurantId?._id || item.restaurantId
           });
         }
       }
     });
 
     return Array.from(categoryMap.values()).slice(0, 8);
-  }, [menuItems, categories]);
+  }, [menuItems]);
 
   /* ---------------- CART ACTION ---------------- */
   const handleQuickAdd = (item) => {
@@ -242,7 +238,7 @@ export default function Index() {
         </div>
 
         {/* ======== 2. PERSONALIZED RECOMMENDATIONS ======== */}
-        <div className="max-w-[1440px] mx-auto px-6 md:px-8">
+        <div className="max-w-full mx-auto px-6 md:px-12">
           <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 md:mb-16 gap-4">
             <div className="space-y-3">
               <div className="h-1.5 w-16 bg-orange-500 rounded-full" />
@@ -296,39 +292,45 @@ export default function Index() {
             </div>
           )}
         </div>
-
-
         {/* ======== 3. BROWSE BY CUISINE ======== */}
         <div className="bg-slate-900 dark:bg-black py-20 md:py-32 transition-colors duration-500">
-          <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-16">
+          {/* Changed max-w-[1440px] to max-w-full */}
+          <div className="max-w-full mx-auto px-6 md:px-12">
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter mb-16 uppercase">
               {t("browseCuisine")} <span className="text-orange-500 italic">Cuisine</span>
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
               {filteredCuisineMenus.length > 0 ? (
                 filteredCuisineMenus.map((menu, index) => (
                   <div
                     key={index}
                     className="group cursor-pointer text-center"
-                    onClick={() => navigate(`/restaurant/${menu.restaurantId?._id || menu.restaurantId}`)}
+                    onClick={() => navigate(`/restaurant/${menu.restaurantId}`)}
                   >
-                    <div className="aspect-square rounded-[30px] md:rounded-[50px] overflow-hidden border-4 border-slate-800 transition-all duration-500 group-hover:border-orange-500 mb-6">
+                    {/* Image Container */}
+                    <div className="aspect-square rounded-[30px] md:rounded-[50px] overflow-hidden border-4 border-slate-800 transition-all duration-500 group-hover:border-orange-500 mb-6 shadow-2xl">
                       <img
-                        src={menu.image ? (menu.image.startsWith('http') ? menu.image : `${API_URL}${menu.image}`) : "/placeholder.jpg"}
-                        alt={menu.displayCategoryName}
+                        src={menu.image?.startsWith('http') ? menu.image : `${API_URL}${menu.image}`}
+                        alt={menu.itemName}
                         className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
                       />
                     </div>
-                    <h3 className="text-lg font-black text-white uppercase group-hover:text-orange-500">
-                      {menu.displayCategoryName}
+
+                    {/* Category Label (Primary) */}
+                    <h3 className="text-lg font-black text-white uppercase group-hover:text-orange-500 transition-colors">
+                      {menu.categoryName}
                     </h3>
+
+                    {/* Item Name (Secondary - Added as requested) */}
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1 group-hover:text-gray-300">
+                      Featured: {menu.itemName}
+                    </p>
                   </div>
                 ))
               ) : (
-                <div className="col-span-full text-center py-10">
-                  <p className="text-gray-500 font-bold uppercase tracking-widest">
-                    {t("loadingCategories") || "Searching for Delicious Categories..."}
-                  </p>
+                <div className="col-span-full text-center text-gray-500 py-10">
+                  {t("noCategoriesFound") || "No cuisines available at the moment."}
                 </div>
               )}
             </div>
