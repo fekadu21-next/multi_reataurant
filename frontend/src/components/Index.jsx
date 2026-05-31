@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   FiChevronDown, FiChevronUp, FiStar, FiArrowRight,
-  FiTruck, FiShield, FiClock, FiShoppingBag, FiPlus, 
-  FiSearch, FiCheckCircle, FiCompass, FiMenu, FiBarChart2, FiUsers
+  FiTruck, FiShield, FiClock, FiShoppingBag, FiPlus,
+  FiSearch, FiCheckCircle, FiCompass, FiMenu, FiBarChart2, FiUsers, FiX
 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+
+// Import your custom standalone partner registration layout
+import RegisterRes from "./RegisterRes";
 
 const API_URL = "https://multi-reataurant-1.onrender.com";
 
@@ -25,6 +28,9 @@ export default function Index() {
   const [showRestaurants, setShowRestaurants] = useState(false);
   const [loadingRecs, setLoadingRecs] = useState(true);
 
+  // Modal display control state trigger
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+
   /* ---------------- SEARCH LOGIC ---------------- */
   const searchQuery = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
 
@@ -38,7 +44,7 @@ export default function Index() {
         ]);
         const dataRest = await resRest.json();
         const dataMenu = await resMenu.json();
-        
+
         setRestaurants(Array.isArray(dataRest) ? dataRest : []);
         setMenuItems(Array.isArray(dataMenu) ? dataMenu : []);
 
@@ -132,11 +138,11 @@ export default function Index() {
   }, [heroImages.length]);
 
   return (
-    <div className="w-full bg-[#FCFCFD] dark:bg-slate-950 transition-colors duration-500 overflow-x-hidden">
+    <div className="w-full bg-[#FCFCFD] dark:bg-slate-950 transition-colors duration-500 overflow-x-hidden relative">
 
       {/* HEADER CONTROLS UTILITY LINE */}
       <div className="relative z-[100] max-w-[1440px] mx-auto px-6 md:px-16 pt-8 md:pt-12 flex flex-row items-center justify-end">
-        
+
         {/* ACTIVE RESTAURANT SELECTOR HUB */}
         <div className="relative inline-block">
           <button
@@ -288,26 +294,26 @@ export default function Index() {
         {/* ======== 3. HIGH-CONVERTING PARTNERSHIP LANDING BANNER WITH INLINE BENEFITS ======== */}
         <div className="max-w-full mx-auto px-6 md:px-12">
           <div className="relative rounded-[40px] overflow-hidden bg-slate-900 text-white p-8 md:p-14 border border-slate-800 shadow-2xl group">
-            
+
             {/* Ambient Background Accent Glows */}
             <div className="absolute top-0 right-0 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none transition-all duration-500 group-hover:bg-orange-500/20" />
             <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-orange-600/5 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-12">
-              
+
               {/* Left Column: Context & Feature Benefits Grid */}
               <div className="space-y-6 max-w-3xl">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-[10px] font-black uppercase tracking-wider">
                   🚀 Self-Service Portal Active
                 </div>
                 <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none uppercase">
-                  List Your Kitchen. <br className="hidden sm:block"/> Become a Partner Today!
+                  List Your Kitchen. <br className="hidden sm:block" /> Become a Partner Today!
                 </h2>
                 <p className="text-sm md:text-base text-gray-400 font-medium leading-relaxed">
                   Take full charge of your enterprise growth. Bypass traditional waitlists—our open architecture allows restaurant store managers to instantly register, configure dynamic menus, and start dispatching orders to customers in minutes.
                 </p>
 
-                {/* UPDATED: Inline Partner Benefits Showcase Layout */}
+                {/* Inline Partner Benefits Showcase Layout */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-slate-800 text-orange-500 rounded-xl flex items-center justify-center shrink-0">
@@ -343,8 +349,8 @@ export default function Index() {
 
               {/* Right Column: Direct Navigation Targets */}
               <div className="w-full lg:w-auto shrink-0">
-                <button 
-                  onClick={() => navigate("/restaurant-register")} 
+                <button
+                  onClick={() => setShowRegisterModal(true)}
                   className="w-full lg:w-56 px-8 py-5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-3 group"
                 >
                   <span>Register Restaurant Now</span>
@@ -473,6 +479,26 @@ export default function Index() {
         </div>
 
       </section>
+
+      {/* ==================== REGISTER RESTAURANT OVERLAY MODAL HOOK ==================== */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-[150] w-full h-full flex items-center justify-center p-4 overflow-y-auto backdrop-blur-md bg-black/60 animate-in fade-in duration-200">
+          <div className="w-full max-w-4xl relative animate-in zoom-in-95 duration-300">
+
+            {/* Modal Layer Header Close Trigger Action */}
+            <button
+              onClick={() => setShowRegisterModal(false)}
+              className="absolute top-6 right-6 md:right-auto md:left-[36%] z-[160] p-2.5 rounded-full bg-slate-900/50 hover:bg-slate-900 text-white transition-colors"
+            >
+              <FiX size={18} />
+            </button>
+
+            {/* Render Standalone Imported Component */}
+            <RegisterRes onClose={() => setShowRegisterModal(false)} />
+
+          </div>
+        </div>
+      )}
 
       <style dangerouslySetInnerHTML={{
         __html: `
